@@ -7,7 +7,7 @@ env = Environment()
 # Libraries:
 env.Append(CPPPATH = ['/usr/local/include/'])
 env.Append(LIBPATH = ['/usr/local/lib/'])
-env.Append(LIBS = ['OpenImageIO',])
+env.Append(LIBS = ['OpenImageIO', 'glfw'])
 
 # Compile time flags.
 env.Append(CCFLAGS = ['-g','-O3'])
