@@ -7,6 +7,7 @@
 
 #include "OrkaApplication.h"
 #include "OrkaMainWindow.h"
+#include "OrkaViewSettings.h"
 #include "ImageSequenceProvider.h"
 
 #include <iostream>
@@ -14,15 +15,10 @@
 namespace orka {
 
 OrkaApplication::OrkaApplication(const std::vector<std::string> & files) {
-	std::cout << "Creating window" << std::endl;
-	mainWindow = new OrkaMainWindow();
-	std::cout << "Creating im provider" << std::endl;
+	view_settings_ = new OrkaViewSettings();
+	mainWindow = new OrkaMainWindow(view_settings_);
 	mProvider = new ImageSequenceProvider(files);
-	std::cout << "set im prov" << std::endl;
 	mainWindow->setImageProvider(mProvider);
-//	std::cout << "m prov start." << std::endl;
-//	mProvider->start();
-//	std::cout << "m prov started." << std::endl;
 }
 
 OrkaApplication::~OrkaApplication() {

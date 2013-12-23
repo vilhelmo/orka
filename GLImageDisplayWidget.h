@@ -15,17 +15,16 @@
 
 #include <OpenImageIO/imageio.h>
 
-#include "actions/OrkaAction.h"
-
 namespace orka {
 
 class OrkaImage;
 class ImageProvider;
+class OrkaViewSettings;
 
 class GLImageDisplayWidget: public QGLWidget {
 Q_OBJECT
 public:
-	GLImageDisplayWidget(QWidget *parent = 0);
+	GLImageDisplayWidget(OrkaViewSettings * view_settings, QWidget *parent = 0);
 	~GLImageDisplayWidget();
 public slots:
 	void start() {
@@ -54,15 +53,11 @@ protected:
 	void mousePressEvent(QMouseEvent * event);
 	void mouseMoveEvent(QMouseEvent * event);
 	void mouseReleaseEvent(QMouseEvent * event);
-	void wheelEvent(QWheelEvent * event) {
-//		std::cout << "scroll x" << dx << " y " << dy << std::endl;
-		event->accept();
-		float numDegrees = event->delta() / 8.0;
-		float numSteps = numDegrees / 15.0;
-		zoom *= pow(1.05, numSteps);
-	}
+	void wheelEvent(QWheelEvent * event);
 private:
 	void paintImage();
+
+	OrkaViewSettings * view_settings_;
 
 	bool mRunning;
 
@@ -85,10 +80,9 @@ private:
 	int matrixUniform;
 	int texCoordAttr;
 	int textureUniform;
+	int exposureUniform;
 	//====
 	int mMouseX, mMouseY;
-	int tx, ty;
-	float zoom;
 };
 
 } // end namespace orka

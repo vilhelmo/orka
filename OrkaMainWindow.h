@@ -7,12 +7,13 @@ namespace orka {
 
 class GLImageDisplayWidget;
 class ImageProvider;
+class OrkaViewSettings;
 
 class OrkaMainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    OrkaMainWindow();
+    OrkaMainWindow(OrkaViewSettings * view_settings);
 	void setImageProvider(ImageProvider * provider);
 private:
     GLImageDisplayWidget * mGLImageDisplayWidget;

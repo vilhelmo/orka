@@ -2,7 +2,6 @@ attribute highp vec4 vertex;
 attribute highp vec4 uv;
 
 uniform mediump mat4 matrix;
-uniform mediump mat4 inv_matrix;
 
 varying highp vec4 f_pos;
 varying highp vec4 f_uv;

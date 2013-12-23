@@ -6,18 +6,16 @@
 
 #include "OrkaImage.h"
 #include "ImageProvider.h"
+#include "OrkaViewSettings.h"
 
 namespace orka {
 
-GLImageDisplayWidget::GLImageDisplayWidget(QWidget *parent) :
-		QGLWidget(parent), mRunning(false), mImageProvider(NULL), mCurrentImage(NULL),
-		mImageWidth(0), mImageHeight(0) {
+GLImageDisplayWidget::GLImageDisplayWidget(OrkaViewSettings * view_settings, QWidget *parent) :
+		QGLWidget(parent), view_settings_(view_settings), mRunning(false), mImageProvider(NULL),
+		mCurrentImage(NULL), mImageWidth(0), mImageHeight(0) {
 	mImageTimer = new QTimer(this);
 	mGLUpdateTimer = new QTimer(this);
 	frames = 0;
-	tx = 0;
-	ty = 0;
-	zoom = 1.0;
 	mMouseX = -1;
 	mMouseY = -1;
 	setAttribute(Qt::WA_PaintOnScreen);
@@ -123,6 +121,7 @@ void GLImageDisplayWidget::initializeGL() {
 	texCoordAttr = program.attributeLocation("uv");
 	matrixUniform = program.uniformLocation("matrix");
 	textureUniform = program.uniformLocation("imageSampler");
+	exposureUniform = program.uniformLocation("exposure");
 }
 
 void GLImageDisplayWidget::mousePressEvent(QMouseEvent * event) {
@@ -136,8 +135,7 @@ void GLImageDisplayWidget::mouseMoveEvent(QMouseEvent * event) {
 		event->accept();
 		int dx = event->x() - mMouseX;
 		int dy = event->y() - mMouseY;
-		tx += dx;
-		ty += dy;
+		view_settings_->move(dx, dy);
 		mMouseX = event->x();
 		mMouseY = event->y();
 	}
@@ -147,6 +145,13 @@ void GLImageDisplayWidget::mouseReleaseEvent(QMouseEvent * event) {
 	event->accept();
 	mMouseX = -1;
 	mMouseY = -1;
+}
+
+void GLImageDisplayWidget::wheelEvent(QWheelEvent * event) {
+	event->accept();
+	float numDegrees = event->delta() / 8.0;
+	float numSteps = numDegrees / 15.0;
+	view_settings_->zoomIn(pow(1.05, numSteps));
 }
 
 void GLImageDisplayWidget::paintGL() {
@@ -180,13 +185,14 @@ void GLImageDisplayWidget::paintGL() {
 	// adjust aspect ratio of window.
 	modelview.scale(1.0, width/height);
 
-	modelview.scale(zoom);
+	modelview.scale(view_settings_->zoom());
 
-	modelview.translate(2.0*tx, -2.0*ty);
+	modelview.translate(2.0*view_settings_->tx(), -2.0*view_settings_->ty());
 
 
 	program.bind();
 	program.setUniformValue(matrixUniform, modelview);
+	program.setUniformValue(exposureUniform, view_settings_->exposure());
 	paintImage();
 	program.release();
 

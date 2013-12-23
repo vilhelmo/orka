@@ -9,14 +9,13 @@
 #include <QLabel>
 #include <QTimer>
 
+#include "OrkaViewSettings.h"
+
 namespace orka {
 
-OrkaMainWindow::OrkaMainWindow()
+OrkaMainWindow::OrkaMainWindow(OrkaViewSettings * view_settings)
 {
-	mGLImageDisplayWidget = new GLImageDisplayWidget();
-//    QTimer *timer = new QTimer(this);
-//
-//    timer->setInterval(20); // 20 ms = 50 fps.
+	mGLImageDisplayWidget = new GLImageDisplayWidget(view_settings);
 
     this->setCentralWidget(mGLImageDisplayWidget);
 
@@ -34,13 +33,22 @@ OrkaMainWindow::OrkaMainWindow()
     QAction * togglePlayPause = new QAction("Play/Pause", controlMenu);
     togglePlayPause->setShortcut(QKeySequence(" "));
 
+    QAction * increase_exposure = new QAction("Increase Exposure", controlMenu);
+    increase_exposure->setShortcut(QKeySequence("+"));
+    QAction * decrease_exposure = new QAction("Decrease Exposure", controlMenu);
+    decrease_exposure->setShortcut(QKeySequence("-"));
+
     fileMenu->addAction(exit);
     controlMenu->addAction(togglePlayPause);
+    controlMenu->addAction(increase_exposure);
+    controlMenu->addAction(decrease_exposure);
     helpMenu->addAction(aboutQt);
 
     QObject::connect(exit, SIGNAL(triggered(bool)), this, SLOT(close()));
-    QObject::connect(togglePlayPause, SIGNAL(triggered(bool)), mGLImageDisplayWidget, SLOT(togglePlayPause()));
     QObject::connect(aboutQt, SIGNAL(triggered(bool)), qApp, SLOT(aboutQt()));
+    QObject::connect(togglePlayPause, SIGNAL(triggered(bool)), mGLImageDisplayWidget, SLOT(togglePlayPause()));
+    QObject::connect(increase_exposure, SIGNAL(triggered(bool)), view_settings, SLOT(increaseExposure()));
+    QObject::connect(decrease_exposure, SIGNAL(triggered(bool)), view_settings, SLOT(decreaseExposure()));
 
     mGLImageDisplayWidget->start();
 }
