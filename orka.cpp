@@ -6,24 +6,22 @@
 #include <iostream>
 #include <exception>
 #include <string>
+#include <sstream>
+
+#include <cstdio>
+
+//#include <glib-2.0/glib.h>
+
 #include <OpenImageIO/imageio.h>
-#include <GLFW/glfw3.h>
+#include <QApplication>
+#include <QMainWindow>
+
+#include "OrkaApplication.h"
+#include "OrkaException.h"
 
 using namespace OpenImageIO;
 
-class OrkaException: virtual public std::exception {
-public:
-	OrkaException(std::string description) :
-			description_(description) {
-	}
-	virtual ~OrkaException() throw () {
-	}
-	virtual const char* what() const throw () {
-		return this->description_.c_str();
-	}
-private:
-	std::string description_;
-};
+using namespace orka;
 
 void testOpenImageIO(char * filename) {
 	std::cout << "Reading image: " << filename << std::endl;
@@ -45,34 +43,36 @@ void testOpenImageIO(char * filename) {
 	delete in;
 }
 
-void testGLFW3() {
-	GLFWwindow* window;
+std::vector<std::string> parseFiles(int argc, char * argv[]) {
+	std::vector<std::string> files;
 
-	/* Initialize the library */
-	if (!glfwInit())
-		throw OrkaException("glfwInit failed.");
+	int bufsize = 1000;
+	char * buffer = (char *) malloc(bufsize * sizeof(char));
 
-	/* Create a windowed mode window and its OpenGL context */
-	window = glfwCreateWindow(640, 480, "Orka Image Viewer", NULL, NULL);
-	if (!window) {
-		glfwTerminate();
+	for (int i = 1; i < argc; i += 1) {
+		char * file = argv[i];
+		std::stringstream cmd;
+		cmd << "ls " << file;
+//		std::cout << "cmd: " << cmd.str() << std::endl;
+		FILE * output = popen(cmd.str().c_str(), "r");
+		if(!output || feof(output) || ferror(output)) {
+			// bad/
+			throw new OrkaException("Blah, couldn't run ls to figure out files.");
+		}
+
+		while (!feof(output) && !ferror(output)) {
+//	    	char *fgets( char *restrict str, int count, FILE *restrict stream );
+			char * success_str = fgets(buffer, bufsize * sizeof(buffer), output);
+			if (!success_str) {
+				break; // hmm.
+			}
+			std::string filename(success_str);
+			filename.erase(filename.find_last_not_of(" \n\r\t")+1);
+	    	files.push_back(filename);
+		}
 	}
-
-	/* Make the window's context current */
-	glfwMakeContextCurrent(window);
-
-	/* Loop until the user closes the window */
-	while (!glfwWindowShouldClose(window)) {
-		/* Render here */
-
-		/* Swap front and back buffers */
-		glfwSwapBuffers(window);
-
-		/* Poll for and process events */
-		glfwPollEvents();
-	}
-
-	glfwTerminate();
+	free(buffer);
+	return files;
 }
 
 int main(int argc, char* argv[]) {
@@ -83,17 +83,24 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	char * filename = argv[1];
-
-	try {
-		// Verify openimageio working
-		testOpenImageIO(filename);
-		// Verify glfw is working
-		testGLFW3();
-		std::cout << "Everything working as expected!" << std::endl;
-	} catch (OrkaException e) {
-		std::cerr << "Encountered a problem: " << e.what() << std::endl;
-		return -1;
+	std::vector<std::string> files = parseFiles(argc, argv);
+	for (std::string file : files) {
+		std::cout << "File: " << file << std::endl;
 	}
-	return 0;
+
+//	try {
+//		// Verify openimageio working
+//		testOpenImageIO(filename);
+//		std::cout << "Everything working as expected!" << std::endl;
+//	} catch (OrkaException e) {
+//		std::cerr << "Encountered a problem: " << e.what() << std::endl;
+//		return -1;
+//	}
+//	std::vector<std::string> files = { std::string(argv[1]) };
+
+	Q_INIT_RESOURCE(texture);
+	QApplication a(argc, argv);
+	OrkaApplication app(files);
+	app.showMainWindow();
+	return a.exec();
 }
