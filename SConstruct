@@ -34,8 +34,8 @@ env.Append(LIBPATH = libDirs)
 env.Append(LIBS = libraries)
 
 # Compile time flags.
-#env.Append(CCFLAGS = ['-g','-O3', '-fPIC', '-std=c++11'])
-env.Append(CCFLAGS = ['-g', '-fPIC', '-std=c++11'])
+env.Append(CCFLAGS = ['-g','-O3', '-fPIC', '-std=c++11'])
+#env.Append(CCFLAGS = ['-g', '-fPIC', '-std=c++11'])
 
 # Linker flags
 env.Append(LINKFLAGS = ['-Wall'])

@@ -29,6 +29,7 @@ public slots:
 	virtual void start() = 0;
 	virtual void stop() = 0;
 	virtual void toggleStartStop() = 0;
+	virtual void jog(int dframes) = 0;
 signals:
 	void displayImage(OrkaImage * image);
 protected:

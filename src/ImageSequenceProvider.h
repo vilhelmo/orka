@@ -22,38 +22,40 @@ namespace orka {
 
 class ThreadedImageLoader: public QRunnable {
 public:
-	ThreadedImageLoader(OrkaImage * im) :
-			mImage(im) {
-	}
-	virtual ~ThreadedImageLoader() {
-	}
-	virtual void run();
+    ThreadedImageLoader(OrkaImage * im) :
+            mImage(im) {
+    }
+    virtual ~ThreadedImageLoader() {
+    }
+    virtual void run();
 private:
-	OrkaImage * mImage;
+    OrkaImage * mImage;
 };
 
 class ImageSequenceProvider: public ImageProvider {
 Q_OBJECT
 public:
-	ImageSequenceProvider(const std::vector<std::string> & files);
-	virtual ~ImageSequenceProvider();
+    ImageSequenceProvider(const std::vector<std::string> & files);
+    virtual ~ImageSequenceProvider();
 private slots:
-	void start();
-	void stop();
-	void toggleStartStop();
+    void start();
+    void stop();
+    void toggleStartStop();
+    void jog(int dframes);
 
-	void displayNextImage();
+    void displayNextImage();
 private:
-	QTimer * display_timer_;
+    QTimer * display_timer_;
 
-	QThreadPool mImageLoaderThreadPool;
-	int mCacheSizeNumImages;
+    QThreadPool mImageLoaderThreadPool;
+    int mCacheSizeNumImages;
 
-	std::vector<std::string> mFiles;
-	int mNumFiles;
-	int mFileIndex;
-	int mLoadIndex;
-	std::vector<OrkaImage *> mImageCache;
+    std::vector<std::string> mFiles;
+    int mNumFiles;
+    int mFileIndex;
+    int mPrevFileIndex;
+    int mLoadIndex;
+    std::vector<OrkaImage *> mImageCache;
 };
 
 } /* namespace orka */
