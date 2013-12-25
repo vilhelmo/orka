@@ -15,7 +15,7 @@ namespace orka {
 
 class OrkaMainWindow;
 class OrkaViewSettings;
-class ImageSequenceProvider;
+class ImageProvider;
 
 class OrkaApplication {
 public:
@@ -24,7 +24,7 @@ public:
 	void showMainWindow();
 private:
 	OrkaMainWindow * mainWindow;
-	ImageSequenceProvider * mProvider;
+	ImageProvider * mProvider;
 	OrkaViewSettings * view_settings_;
 };
 

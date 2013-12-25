@@ -17,21 +17,25 @@ namespace orka {
 
 OrkaImage::OrkaImage(std::string filename) : mFilename(filename), mLoaded(false) {
 	mLoadMutex = new QMutex();
-	//	OpenImageIO::ImageInput * image = OpenImageIO::ImageInput::open(filename);
-//	if (!image) {
-//		throw OrkaException(std::string("Unable to open image: ") + filename + "\nError: " + OpenImageIO::geterror());
-//	}
-//	const OpenImageIO::ImageSpec &spec = image->spec();
-//	int xres = spec.width;
-//	int yres = spec.height;
-//	int channels = spec.nchannels;
-//	mPixels = new float[xres * yres * channels];
-//	mWidth = xres;
-//	mHeight = yres;
-//	mChannels = channels;
-//	image->read_image(OpenImageIO::TypeDesc::FLOAT, &mPixels[0]);
-//	image->close();
-//	delete image;
+}
+
+OrkaImage::OrkaImage(int width, int height, int channels) : mLoaded(true),
+		mWidth(width), mHeight(height), mChannels(channels) {
+	mLoadMutex = new QMutex();
+	mPixels = new float[mWidth * mHeight * mChannels];
+}
+
+OrkaImage::OrkaImage(const OrkaImage & other) {
+	mLoadMutex = new QMutex();
+	mWidth = other.mWidth;
+	mHeight = other.mHeight;
+	mChannels = other.mChannels;
+	mFilename = other.mFilename;
+	mLoaded = other.mLoaded;
+	if (mLoaded) {
+		mPixels = new float[mWidth * mHeight * mChannels];
+		memcpy(mPixels, other.mPixels, mWidth * mHeight * mChannels * sizeof(float));
+	}
 }
 
 OrkaImage::~OrkaImage() {

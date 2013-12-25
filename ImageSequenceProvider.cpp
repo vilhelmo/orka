@@ -21,9 +21,9 @@ ImageSequenceProvider::ImageSequenceProvider(const std::vector<std::string> & fi
 	mImageCache.push_back(firstImage);
 	firstImage->loadImage();
 	int approxSize = firstImage->approxSize();
-	int cacheSize = 50 * 1000 * 1000; // 50 mb
+	// TODO: Let the user configure cache size
+	int cacheSize = 200 * 1000 * 1000; // 200 mb
 	mCacheSizeNumImages = cacheSize/approxSize;
-	std::cout << "Num cached images: " << mCacheSizeNumImages << " image size: " << approxSize << " total no " << mNumFiles << std::endl;
 	for (int i = 1; i < mNumFiles; i += 1) {
 		std::string filename = mFiles.at(i);
 		OrkaImage * image = new OrkaImage(filename);
@@ -40,8 +40,10 @@ ImageSequenceProvider::ImageSequenceProvider(const std::vector<std::string> & fi
 		}
 	}
 	mLoadIndex = mLoadIndex % mNumFiles;
-	std::cout << "mLoadINdex: " << mLoadIndex << std::endl;
 	assert(mImageCache.size() == mFiles.size());
+
+	display_timer_ = new QTimer();
+	QObject::connect(display_timer_, SIGNAL(timeout()), this, SLOT(displayNextImage()));
 }
 
 ImageSequenceProvider::~ImageSequenceProvider() {
@@ -50,7 +52,23 @@ ImageSequenceProvider::~ImageSequenceProvider() {
 	}
 }
 
-ImageTimeStruct ImageSequenceProvider::getImage() {
+void ImageSequenceProvider::start() {
+	display_timer_->start(41);
+}
+
+void ImageSequenceProvider::stop() {
+	display_timer_->stop();
+}
+
+void ImageSequenceProvider::toggleStartStop() {
+	if (display_timer_->isActive()) {
+		stop();
+	} else {
+		start();
+	}
+}
+
+void ImageSequenceProvider::displayNextImage() {
 	if (mCacheSizeNumImages < mNumFiles) {
 		// Not all images fit in cache. Free one and load a new one up.
 		int prevIdx = (mNumFiles + mFileIndex - 1) % mNumFiles;
@@ -63,13 +81,10 @@ ImageTimeStruct ImageSequenceProvider::getImage() {
 		mLoadIndex = (mLoadIndex + 1) % mNumFiles;
 	}
 
-	ImageTimeStruct result;
-	result.displayTimeMs = 41; // 24 hz
-	result.image = mImageCache.at(mFileIndex);
+	OrkaImage * image = mImageCache.at(mFileIndex);
 	mFileIndex = (mFileIndex + 1) % mNumFiles;
 
-	return result;
+	emit displayImage(image);
 }
-
 
 } /* namespace orka */

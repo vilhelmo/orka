@@ -14,29 +14,39 @@
 
 #include <QRunnable>
 #include <QThreadPool>
+#include <QTimer>
 
 #include "ImageProvider.h"
 
 namespace orka {
 
-class ThreadedImageLoader : public QRunnable {
+class ThreadedImageLoader: public QRunnable {
 public:
-	ThreadedImageLoader(OrkaImage * im) : mImage(im) {}
-	virtual ~ThreadedImageLoader() {}
+	ThreadedImageLoader(OrkaImage * im) :
+			mImage(im) {
+	}
+	virtual ~ThreadedImageLoader() {
+	}
 	virtual void run();
 private:
 	OrkaImage * mImage;
 };
 
-class ImageSequenceProvider : public ImageProvider {
+class ImageSequenceProvider: public ImageProvider {
+Q_OBJECT
 public:
 	ImageSequenceProvider(const std::vector<std::string> & files);
 	virtual ~ImageSequenceProvider();
-	virtual ImageTimeStruct getImage();
+private slots:
+	void start();
+	void stop();
+	void toggleStartStop();
 
+	void displayNextImage();
 private:
+	QTimer * display_timer_;
+
 	QThreadPool mImageLoaderThreadPool;
-//	QSemaphore * mCacheLimitSemaphore;
 	int mCacheSizeNumImages;
 
 	std::vector<std::string> mFiles;

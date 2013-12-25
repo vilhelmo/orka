@@ -11,9 +11,8 @@
 namespace orka {
 
 GLImageDisplayWidget::GLImageDisplayWidget(OrkaViewSettings * view_settings, QWidget *parent) :
-		QGLWidget(parent), view_settings_(view_settings), mRunning(false), mImageProvider(NULL),
-		mCurrentImage(NULL), mImageWidth(0), mImageHeight(0) {
-	mImageTimer = new QTimer(this);
+		QGLWidget(parent), view_settings_(view_settings), mImageProvider(NULL),
+		mCurrentImage(NULL), mImageWidth(0), mImageHeight(0), image_transferred_(false) {
 	mGLUpdateTimer = new QTimer(this);
 	frames = 0;
 	mMouseX = -1;
@@ -29,43 +28,43 @@ GLImageDisplayWidget::GLImageDisplayWidget(OrkaViewSettings * view_settings, QWi
 GLImageDisplayWidget::~GLImageDisplayWidget() {
 }
 
+void GLImageDisplayWidget::start() {
+	mImageProvider->start();
+}
+
+void GLImageDisplayWidget::stop() {
+	mImageProvider->stop();
+}
+
+void GLImageDisplayWidget::togglePlayPause() {
+	mImageProvider->toggleStartStop();
+}
+
 void GLImageDisplayWidget::setImageProvider(ImageProvider * provider) {
-	mImageMutex.lock();
 	mImageProvider = provider;
-	mImageMutex.unlock();
 }
 
-void GLImageDisplayWidget::fetchImage() {
-	mImageMutex.lock();
-	if (!mImageProvider)
-		return;
-	ImageTimeStruct imtime = mImageProvider->getImage();
-	mCurrentImage = imtime.image;
-	mImageMutex.unlock();
-
-	if (mRunning && imtime.displayTimeMs > 0) {
-		mImageTimer->singleShot(imtime.displayTimeMs, this, SLOT(fetchImage()));
-	}
+void GLImageDisplayWidget::displayImage(OrkaImage * image) {
+	mCurrentImage = image;
+	image_transferred_ = false;
 }
+
 
 void GLImageDisplayWidget::loadImage() {
-	if (!mCurrentImage)
+	if (!mCurrentImage || image_transferred_)
 		return;
 
-	if (mImageMutex.tryLock(5)) {
-		assert(mCurrentImage->channels() == 3); // TODO: Support != 3 rgb channels
-		mImageWidth = mCurrentImage->width();
-		mImageHeight = mCurrentImage->height();
+	assert(mCurrentImage->channels() == 3); // TODO: Support != 3 rgb channels
+	mImageWidth = mCurrentImage->width();
+	mImageHeight = mCurrentImage->height();
 
-		glBindTexture(GL_TEXTURE_2D, m_imageTexture);
-		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, im->width(), im->height(), 0, GL_RGBA, GL_FLOAT, (GLvoid *) im->getPixels());
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, mCurrentImage->width(),
-				mCurrentImage->height(), 0, GL_RGB, GL_FLOAT,
-				(GLvoid *) mCurrentImage->getPixels());
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		mImageMutex.unlock();
-	}
+	glBindTexture(GL_TEXTURE_2D, m_imageTexture);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, im->width(), im->height(), 0, GL_RGBA, GL_FLOAT, (GLvoid *) im->getPixels());
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, mCurrentImage->width(),
+			mCurrentImage->height(), 0, GL_RGB, GL_FLOAT,
+			(GLvoid *) mCurrentImage->getPixels());
+	glBindTexture(GL_TEXTURE_2D, 0);
+	image_transferred_ = true;
 }
 
 void GLImageDisplayWidget::paintImage() {

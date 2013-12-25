@@ -10,6 +10,7 @@
 #include <QTimer>
 
 #include "OrkaViewSettings.h"
+#include "ImageProvider.h"
 
 namespace orka {
 
@@ -49,12 +50,12 @@ OrkaMainWindow::OrkaMainWindow(OrkaViewSettings * view_settings)
     QObject::connect(togglePlayPause, SIGNAL(triggered(bool)), mGLImageDisplayWidget, SLOT(togglePlayPause()));
     QObject::connect(increase_exposure, SIGNAL(triggered(bool)), view_settings, SLOT(increaseExposure()));
     QObject::connect(decrease_exposure, SIGNAL(triggered(bool)), view_settings, SLOT(decreaseExposure()));
-
-    mGLImageDisplayWidget->start();
 }
 
 void OrkaMainWindow::setImageProvider(ImageProvider * provider) {
 	mGLImageDisplayWidget->setImageProvider(provider);
+	QObject::connect(provider, SIGNAL(displayImage(OrkaImage *)), mGLImageDisplayWidget, SLOT(displayImage(OrkaImage *)));
+    mGLImageDisplayWidget->start();
 }
 
 } // end namespace orka

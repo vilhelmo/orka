@@ -8,6 +8,8 @@
 #ifndef IMAGEPROVIDER_H_
 #define IMAGEPROVIDER_H_
 
+#include <QObject>
+
 namespace orka {
 
 class OrkaImage;
@@ -18,12 +20,17 @@ public:
 	int displayTimeMs;
 };
 
-class ImageProvider {
+class ImageProvider : public QObject {
+	Q_OBJECT
 public:
-	ImageProvider() {}
-	virtual ~ImageProvider() {}
-	virtual ImageTimeStruct getImage() = 0;
-
+	ImageProvider();
+	virtual ~ImageProvider();
+public slots:
+	virtual void start() = 0;
+	virtual void stop() = 0;
+	virtual void toggleStartStop() = 0;
+signals:
+	void displayImage(OrkaImage * image);
 protected:
 };
 

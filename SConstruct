@@ -1,7 +1,7 @@
 
 env = Environment()
 
-env['QT5_DEBUG'] = 1
+env['QT5_DEBUG'] = 0
 
 # Set new vars
 env['QT5DIR'] = '/opt/qt-5.0.2/5.0.2/gcc_64'
@@ -13,19 +13,26 @@ env.Tool('qt5')
 #env.ParseConfig( 'pkg-config --cflags glib-2.0' )
 
 # Libraries:
-includeDirs = ['/usr/local/include/',
+includeDirs = ['/usr/include/',
+                '/usr/local/include/',
                 env['QT5DIR'] + '/include']
-libDirs = ['/usr/local/lib/',
+libDirs = ['/usr/lib',
+            '/usr/local/lib/',
             env['QT5DIR'] + '/lib']
 
-libraries = ['OpenImageIO', 'GL']
-                
+libraries = [
+            'GL',
+            'OpenImageIO', 
+            'vlc',
+            ]
+
 env.Append(CPPPATH = includeDirs)
 env.Append(LIBPATH = libDirs)
 env.Append(LIBS = libraries)
 
 # Compile time flags.
-env.Append(CCFLAGS = ['-g','-O3', '-fPIC', '-std=c++11'])
+#env.Append(CCFLAGS = ['-g','-O3', '-fPIC', '-std=c++11'])
+env.Append(CCFLAGS = ['-g', '-fPIC', '-std=c++11'])
 
 # Linker flags
 env.Append(LINKFLAGS = ['-Wall'])
@@ -42,7 +49,9 @@ env.Uic5(Glob('*.ui'))
 ### The program itself:
 
 sourceFiles = [ 'GLImageDisplayWidget.cpp',
+                'ImageProvider.cpp',
                 'ImageSequenceProvider.cpp',
+                'VLCMovieProvider.cpp',
                 'OrkaApplication.cpp', 
                 'OrkaImage.cpp',
                 'OrkaMainWindow.cpp',

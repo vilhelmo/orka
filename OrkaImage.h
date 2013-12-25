@@ -17,6 +17,8 @@ namespace orka {
 class OrkaImage {
 public:
 	OrkaImage(std::string filename);
+	OrkaImage(int width, int height, int channels);
+	OrkaImage(const OrkaImage & other);
 	virtual ~OrkaImage();
 	void loadImage();
 	bool isLoaded();
@@ -26,14 +28,16 @@ public:
 	unsigned int height();
 	unsigned int channels();
 	unsigned int approxSize();
+
+	float * mPixels;
 private:
 	QMutex * mLoadMutex;
 	std::string mFilename;
 	bool mLoaded;
-	float * mPixels;
 	int mWidth;
 	int mHeight;
 	int mChannels;
+
 };
 
 } /* namespace orka */

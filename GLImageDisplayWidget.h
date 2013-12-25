@@ -27,24 +27,12 @@ public:
 	GLImageDisplayWidget(OrkaViewSettings * view_settings, QWidget *parent = 0);
 	~GLImageDisplayWidget();
 public slots:
-	void start() {
-		mImageTimer->singleShot(41, this, SLOT(fetchImage()));
-		mRunning = true;
-	}
-	void stop() {
-		mImageTimer->stop();
-		mRunning = false;
-	}
-	void togglePlayPause() {
-		if (mRunning) {
-			stop();
-		} else {
-			start();
-		}
-	}
+	void start();
+	void stop();
+	void togglePlayPause();
 	void setImageProvider(ImageProvider * provider);
 protected slots:
-	void fetchImage();
+	void displayImage(OrkaImage * image);
 protected:
 	void loadImage();
 	void paintGL();
@@ -59,14 +47,11 @@ private:
 
 	OrkaViewSettings * view_settings_;
 
-	bool mRunning;
-
 	ImageProvider * mImageProvider;
 	OrkaImage * mCurrentImage;
 	int mImageWidth;
 	int mImageHeight;
-	QTimer * mImageTimer;
-	QMutex mImageMutex;
+	bool image_transferred_;
 
 	QTimer * mGLUpdateTimer;
 
