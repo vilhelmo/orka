@@ -1,4 +1,7 @@
 
+# Build files into a build folder
+VariantDir('build', 'src')
+
 env = Environment()
 
 env['QT5_DEBUG'] = 0
@@ -58,11 +61,11 @@ sourceFiles = [ 'GLImageDisplayWidget.cpp',
                 'OrkaViewSettings.cpp',
                 'orka.cpp'
               ]
-              
-resourceFiles = ['texture.qrc']
+
+resourceFiles = ['resources.qrc']
 
 # Run 'scons qttest' to compile.
-orka = env.Program(target='orka', source=sourceFiles+resourceFiles)
+orka = env.Program(target='orka', source=['build/' + s for s in (sourceFiles+resourceFiles)])
 
 # The default target when just running 'scons' 
 Default(orka)

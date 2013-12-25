@@ -45,6 +45,7 @@ OrkaApplication::~OrkaApplication() {
 	mainWindow->hide();
 	delete mainWindow;
 	delete mProvider;
+	delete view_settings_;
 }
 
 void OrkaApplication::showMainWindow() {

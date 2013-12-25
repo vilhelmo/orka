@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
 	std::cout << std::endl;
 
 	try {
-		Q_INIT_RESOURCE(texture);
+		Q_INIT_RESOURCE(resources);
 		QApplication a(argc, argv);
 		OrkaApplication app(files);
 		app.showMainWindow();
