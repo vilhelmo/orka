@@ -35,7 +35,7 @@ OrkaMainWindow::OrkaMainWindow(OrkaViewSettings * view_settings)
     togglePlayPause->setShortcut(QKeySequence(" "));
 
     QAction * increase_exposure = new QAction("Increase Exposure", controlMenu);
-    increase_exposure->setShortcut(QKeySequence("+"));
+    increase_exposure->setShortcut(QKeySequence("Shift++"));
     QAction * decrease_exposure = new QAction("Decrease Exposure", controlMenu);
     decrease_exposure->setShortcut(QKeySequence("-"));
 
