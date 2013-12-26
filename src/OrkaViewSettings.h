@@ -19,8 +19,11 @@ public:
 	virtual ~OrkaViewSettings();
 
 	int tx() { return tx_; }
+	void set_tx(int tx) { tx_ = tx; }
 	int ty() { return ty_; }
+	void set_ty(int ty) { ty_ = ty; }
 	float zoom() { return zoom_; }
+	void set_zoom(float zoom) { zoom_ = zoom; }
 	float exposure() { return exposure_; }
 
 public slots:
@@ -32,6 +35,7 @@ public slots:
 	}
 	void resetZoom() {
 		zoom_ = 1.0;
+		resetTranslation();
 	}
 	void resetTranslation() {
 		tx_ = ty_ = 0;

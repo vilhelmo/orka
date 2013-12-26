@@ -59,7 +59,12 @@ ImageSequenceProvider::~ImageSequenceProvider() {
 }
 
 void ImageSequenceProvider::start() {
-    display_timer_->start(41);
+    if (mNumFiles > 1) {
+        display_timer_->start(41);
+    } else {
+        // Optimize case with a single image.
+        display_timer_->singleShot(10, this, SLOT(displayNextImage()));
+    }
 }
 
 void ImageSequenceProvider::stop() {
@@ -91,7 +96,8 @@ void ImageSequenceProvider::jog(int dframes) {
 }
 
 void ImageSequenceProvider::displayNextImage() {
-    if (mCacheSizeNumImages < mNumFiles && mPrevFileIndex >= 0) {
+    if (mCacheSizeNumImages < mNumFiles &&
+            mPrevFileIndex >= 0) {
         // Not all images fit in cache. Free one and load a new one up.
         //int prevIdx = (mNumFiles + mFileIndex - 1) % mNumFiles;
         // Free last image displayed.

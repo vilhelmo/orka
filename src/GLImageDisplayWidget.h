@@ -37,6 +37,7 @@ public slots:
     void setImageProvider(ImageProvider * provider);
 protected slots:
     void displayImage(OrkaImage * image);
+    void fitZoomToWindow();
 protected:
     void loadImage();
     void paintGL();

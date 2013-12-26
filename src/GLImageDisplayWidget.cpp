@@ -52,10 +52,24 @@ void GLImageDisplayWidget::displayImage(OrkaImage * image) {
     image_transferred_ = false;
 }
 
+void GLImageDisplayWidget::fitZoomToWindow() {
+    float zoom = 1.0;
+    float height = this->height();
+    float width = this->width();
+    if (mImageWidth > mImageHeight) {
+        zoom = width/float(mImageWidth);
+    } else {
+        zoom = height/float(mImageHeight);
+    }
+    view_settings_->set_zoom(zoom);
+    view_settings_->resetTranslation();
+}
+
 void GLImageDisplayWidget::loadImage() {
     if (!mCurrentImage || image_transferred_)
         return;
 
+//    std::cout << "Load image..." << std::endl;
 //	assert(mCurrentImage->channels() == 3); // TODO: Support != 3 rgb channels
     mImageWidth = mCurrentImage->width();
     mImageHeight = mCurrentImage->height();
@@ -103,8 +117,8 @@ void GLImageDisplayWidget::initializeGL() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     // TODO: Make linear/nearest texture filtering configurable.
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); //LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); //LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     program.removeAllShaders();
