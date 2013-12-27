@@ -40,7 +40,6 @@ protected slots:
     void fitZoomToWindow();
 protected:
     void loadImage();
-    void paintGL();
     void initializeGL();
 
     void mousePressEvent(QMouseEvent * event);
@@ -48,10 +47,13 @@ protected:
     void mouseReleaseEvent(QMouseEvent * event);
     void wheelEvent(QWheelEvent * event);
 private:
+    void paintGL();
     void paintImage();
+    void paintColorPicker(QPainter & painter, QMatrix4x4 & image_transform);
 
     OrkaViewSettings * view_settings_;
     MouseDragStatus mouse_drag_status_;
+    int mouse_drag_x_, mouse_drag_y_;
 
     ImageProvider * mImageProvider;
     OrkaImage * mCurrentImage;
@@ -64,16 +66,20 @@ private:
     int frames;
     QTime time;
 
-    QOpenGLShaderProgram program;
-    GLuint m_imageTexture;
+    //===
+    QOpenGLShaderProgram image_program_;
+    GLuint gl_image_tex_id;
+    int image_vertex_attr_, image_tex_coord_attr_;
+    int image_matrix_uniform_, image_texture_uniform_;
+    int image_exposure_uniform_;
+    //===
+    QOpenGLShaderProgram default_program_;
+    int default_vertex_attr_;
+    int default_color_uniform_;
+    int default_matrix_uniform_;
+    //===
 
-    int vertexAttr;
-    int matrixUniform;
-    int texCoordAttr;
-    int textureUniform;
-    int exposureUniform;
-    //====
-    int mMouseX, mMouseY;
+    int mouse_track_x_, mouse_track_y_;
 };
 
 } // end namespace orka

@@ -38,9 +38,10 @@ OrkaMainWindow::OrkaMainWindow(OrkaViewSettings * view_settings)
     increase_exposure->setShortcut(QKeySequence("Shift++"));
     QAction * decrease_exposure = new QAction("Decrease Exposure", controlMenu);
     decrease_exposure->setShortcut(QKeySequence("-"));
-    QAction * reset_zoom = new QAction("Reset zoom 100%", controlMenu);
     QAction * fit_zoom = new QAction("Fit zoom to window", controlMenu);
-//    reset_zoom->setShortcut(QKeySequence("-"));
+    fit_zoom->setShortcut(QKeySequence("0"));
+    QAction * reset_zoom = new QAction("Set zoom 100%", controlMenu);
+    reset_zoom->setShortcut(QKeySequence("1"));
 
     fileMenu->addAction(exit);
     controlMenu->addAction(togglePlayPause);

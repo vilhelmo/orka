@@ -18,12 +18,16 @@ GLImageDisplayWidget::GLImageDisplayWidget(OrkaViewSettings * view_settings,
     mGLUpdateTimer = new QTimer(this);
     mouse_drag_status_ = Inactive;
     frames = 0;
-    mMouseX = -1;
-    mMouseY = -1;
+
     setAttribute(Qt::WA_PaintOnScreen);
     setAttribute(Qt::WA_NoSystemBackground);
     setAutoBufferSwap(false);
+
     setMinimumSize(640, 480);
+
+    // Always enable mouseMove events, not only when the mouse is pressed down.
+    setMouseTracking(true);
+
     QObject::connect(mGLUpdateTimer, SIGNAL(timeout()), this, SLOT(updateGL()));
     mGLUpdateTimer->start(20);
 }
@@ -74,8 +78,7 @@ void GLImageDisplayWidget::loadImage() {
     mImageWidth = mCurrentImage->width();
     mImageHeight = mCurrentImage->height();
 
-    glBindTexture(GL_TEXTURE_2D, m_imageTexture);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, im->width(), im->height(), 0, GL_RGBA, GL_FLOAT, (GLvoid *) im->getPixels());
+    glBindTexture(GL_TEXTURE_2D, gl_image_tex_id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, mCurrentImage->width(),
             mCurrentImage->height(), 0, GL_RGB, mCurrentImage->glType(),
             (GLvoid *) mCurrentImage->getPixels());
@@ -83,37 +86,12 @@ void GLImageDisplayWidget::loadImage() {
     image_transferred_ = true;
 }
 
-void GLImageDisplayWidget::paintImage() {
-    glEnable(GL_TEXTURE_2D);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_imageTexture);
-
-    float halfWidth = float(mImageWidth);
-    float halfHeight = float(mImageHeight);
-    float vertices[8] = { -halfWidth, -halfHeight, halfWidth, -halfHeight,
-            halfWidth, halfHeight, -halfWidth, halfHeight };
-    float textureCoords[8] = { 0.f, 0.f, 1.f, 0.f, 1.f, 1.f, 0.f, 1.f };
-
-    program.enableAttributeArray(vertexAttr);
-    program.setAttributeArray(vertexAttr, vertices, 2);
-    program.enableAttributeArray(texCoordAttr);
-    program.setAttributeArray(texCoordAttr, textureCoords, 2);
-
-    program.setUniformValue(textureUniform, 0); // use texture unit 0
-
-    glDrawArrays(GL_QUADS, 0, 4);
-
-    program.disableAttributeArray(vertexAttr);
-    program.disableAttributeArray(texCoordAttr);
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
-
 void GLImageDisplayWidget::initializeGL() {
     glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
 
     glEnable(GL_TEXTURE_2D);
-    glGenTextures(1, &m_imageTexture);
-    glBindTexture(GL_TEXTURE_2D, m_imageTexture);
+    glGenTextures(1, &gl_image_tex_id);
+    glBindTexture(GL_TEXTURE_2D, gl_image_tex_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     // TODO: Make linear/nearest texture filtering configurable.
@@ -121,18 +99,29 @@ void GLImageDisplayWidget::initializeGL() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    program.removeAllShaders();
-    program.addShaderFromSourceFile(QOpenGLShader::Vertex,
-            QString("vertex.glsl"));
-    program.addShaderFromSourceFile(QOpenGLShader::Fragment,
-            QString("fragment.glsl"));
-    program.link();
+    image_program_.removeAllShaders();
+    image_program_.addShaderFromSourceFile(QOpenGLShader::Vertex,
+            QString("image_vertex.glsl"));
+    image_program_.addShaderFromSourceFile(QOpenGLShader::Fragment,
+            QString("image_fragment.glsl"));
+    image_program_.link();
 
-    vertexAttr = program.attributeLocation("vertex");
-    texCoordAttr = program.attributeLocation("uv");
-    matrixUniform = program.uniformLocation("matrix");
-    textureUniform = program.uniformLocation("imageSampler");
-    exposureUniform = program.uniformLocation("exposure");
+    image_vertex_attr_ = image_program_.attributeLocation("vertex");
+    image_tex_coord_attr_ = image_program_.attributeLocation("uv");
+    image_matrix_uniform_ = image_program_.uniformLocation("matrix");
+    image_texture_uniform_ = image_program_.uniformLocation("imageSampler");
+    image_exposure_uniform_ = image_program_.uniformLocation("exposure");
+
+    default_program_.removeAllShaders();
+    default_program_.addShaderFromSourceFile(QOpenGLShader::Vertex,
+            QString("default_vertex.glsl"));
+    default_program_.addShaderFromSourceFile(QOpenGLShader::Fragment,
+            QString("default_fragment.glsl"));
+    default_program_.link();
+
+    default_vertex_attr_ = default_program_.attributeLocation("vertex");
+    default_color_uniform_ = default_program_.uniformLocation("color");
+    default_matrix_uniform_ = default_program_.uniformLocation("matrix");
 }
 
 void GLImageDisplayWidget::mousePressEvent(QMouseEvent * event) {
@@ -143,24 +132,28 @@ void GLImageDisplayWidget::mousePressEvent(QMouseEvent * event) {
     } else {
         mouse_drag_status_ = Translate;
     }
-    mMouseX = event->x();
-    mMouseY = event->y();
+    mouse_drag_x_ = event->x();
+    mouse_drag_y_ = event->y();
 }
 
 void GLImageDisplayWidget::mouseMoveEvent(QMouseEvent * event) {
+    event->accept();
     if (mouse_drag_status_ != Inactive) {
-        event->accept();
-        int dx = event->x() - mMouseX;
-        int dy = event->y() - mMouseY;
+        int dx = event->x() - mouse_drag_x_;
+        int dy = event->y() - mouse_drag_y_; // go other way in y.
         if (mouse_drag_status_ == Translate) {
+            // scale translation
             view_settings_->move(dx, dy);
         } else if (mouse_drag_status_ == Jog && fabs(dx) >= 10) {
             mImageProvider->jog(float(dx) / 10.0);
         } else if (mouse_drag_status_ == Jog) {
             return;
         }
-        mMouseX = event->x();
-        mMouseY = event->y();
+        mouse_drag_x_ = event->x();
+        mouse_drag_y_ = event->y();
+    } else {
+        mouse_track_x_ = event->x();
+        mouse_track_y_ = event->y();
     }
 }
 
@@ -196,27 +189,32 @@ void GLImageDisplayWidget::paintGL() {
     float max = mImageWidth > mImageHeight ? mImageWidth : mImageHeight;
 
     // -1 <= x,y <= 1
+    float half_width = width/2.f;
+    float half_height = height/2.f;
     QMatrix4x4 modelview;
-
-    // adjust to aspect ratio of image.
-    modelview.scale(1.0 / max, 1.0 / max);
-
-    // Scale image to pixels on screen.
-    modelview.scale(float(mImageWidth) / width);
-
-    // adjust aspect ratio of window.
-    modelview.scale(1.0, width / height);
-
+    modelview.ortho(-half_width, half_width, // left, right
+            half_height, -half_height, // bottom, top
+            0, 1);
     modelview.scale(view_settings_->zoom());
 
-    modelview.translate(2.0 * view_settings_->tx(),
-            -2.0 * view_settings_->ty());
+//    // adjust to aspect ratio of image.
+//    modelview.scale(1.0 / max, 1.0 / max);
+//    // Scale image to pixels on screen.
+//    modelview.scale(float(mImageWidth) / width);
+//    // adjust aspect ratio of window.
+//    modelview.scale(1.0, width / height);
+//    modelview.scale(view_settings_->zoom());
+//    modelview.translate(2.0 * view_settings_->tx(),
+//            -2.0 * view_settings_->ty());
 
-    program.bind();
-    program.setUniformValue(matrixUniform, modelview);
-    program.setUniformValue(exposureUniform, view_settings_->exposure());
+    image_program_.bind();
+    image_program_.setUniformValue(image_matrix_uniform_, modelview);
+    image_program_.setUniformValue(image_exposure_uniform_, view_settings_->exposure());
     paintImage();
-    program.release();
+    image_program_.release();
+
+    // Paint other native ui elements.
+    paintColorPicker(painter, modelview);
 
     painter.endNativePainting();
 
@@ -236,6 +234,103 @@ void GLImageDisplayWidget::paintGL() {
         frames = 0;
     }
     frames++;
+}
+
+void GLImageDisplayWidget::paintImage() {
+    glEnable(GL_TEXTURE_2D);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gl_image_tex_id);
+
+    float half_width = float(mImageWidth)/2.0;
+    float half_height = float(mImageHeight)/2.0;
+    float tx = view_settings_->tx();
+    float ty = view_settings_->ty();
+    float vertices[8] = { -half_width+tx, -half_height+ty, //
+            half_width+tx, -half_height+ty, //
+            half_width+tx, half_height+ty, //
+            -half_width+tx, half_height+ty };
+    float textureCoords[8] = { 0.f, 1.f, //
+            1.f, 1.f, //
+            1.f, 0.f, //
+            0.f, 0.f };
+
+    image_program_.enableAttributeArray(image_vertex_attr_);
+    image_program_.setAttributeArray(image_vertex_attr_, vertices, 2);
+    image_program_.enableAttributeArray(image_tex_coord_attr_);
+    image_program_.setAttributeArray(image_tex_coord_attr_, textureCoords, 2);
+
+    image_program_.setUniformValue(image_texture_uniform_, 0); // use texture unit 0
+
+    glDrawArrays(GL_QUADS, 0, 4);
+
+    image_program_.disableAttributeArray(image_vertex_attr_);
+    image_program_.disableAttributeArray(image_tex_coord_attr_);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void GLImageDisplayWidget::paintColorPicker(QPainter & painter, QMatrix4x4 & image_transform) {
+    if (!mCurrentImage) {
+        return;
+    }
+
+    float starty = this->height() - 25.f;
+    float color_picker_screen_coords [8] = {
+            10.f, starty,
+            10.f, starty+15.f,
+            25.f, starty+15.f,
+            25.f, starty,
+    };
+
+    float norm_mouse_x = 2.0*mouse_track_x_/float(this->width()) - 1.0;
+    float norm_mouse_y = 2.0*mouse_track_y_/float(this->height()) - 1.0;
+    bool invertible = true;
+    QMatrix4x4 inv_image_transform = image_transform.inverted(&invertible);
+    QVector4D pos = inv_image_transform * QVector3D(norm_mouse_x, norm_mouse_y, 0);
+
+    float half_width = float(mImageWidth)/2.0;
+    float half_height = float(mImageHeight)/2.0;
+    float tx = view_settings_->tx();
+    float ty = view_settings_->ty();
+    pos += QVector3D(half_width-tx, half_height+ty, 0);
+
+    int x = pos.x();
+    int y = mImageHeight - pos.y();
+
+    std::stringstream ss;
+    ss << "Position (" << x << ", " << y << ")";
+
+    float pixel_color[4] = { 0.f, 0.f, 0.f, 1.f };
+    if (x >= 0 && x < mImageWidth &&
+            y >= 0 && y < mImageHeight) {
+        for (uint i = 0; i < mCurrentImage->channels(); i += 1) {
+            pixel_color[i] = mCurrentImage->getPixel(x, y, i);
+        }
+    }
+
+
+    default_program_.bind();
+    QMatrix4x4 ortho_matrix;
+    ortho_matrix.ortho(this->rect());
+    default_program_.setUniformValue(default_matrix_uniform_, ortho_matrix);
+
+    default_program_.setUniformValue(default_color_uniform_, pixel_color[0],
+            pixel_color[1], pixel_color[2], pixel_color[3]);
+
+    default_program_.enableAttributeArray(default_vertex_attr_);
+    default_program_.setAttributeArray(default_vertex_attr_, color_picker_screen_coords, 2);
+
+    glDrawArrays(GL_QUADS, 0, 4);
+
+    default_program_.disableAttributeArray(default_vertex_attr_);
+    default_program_.release();
+
+    painter.setPen(Qt::white);
+    painter.drawText(30, starty, ss.str().c_str());
+    std::stringstream ss2;
+    ss2 << "Color: " << pixel_color[0] << ", " << pixel_color[1] << ", "
+            << pixel_color[2] << ", " << pixel_color[3];
+    painter.setPen(Qt::white);
+    painter.drawText(30, starty+15, ss2.str().c_str());
 }
 
 } // end namespace orka
