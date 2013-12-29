@@ -114,19 +114,24 @@ void ImageSequenceProvider::gotoFrame(int frame) {
     mPrevFileIndex = mFileIndex;
     mFileIndex = (frame - 1) % mNumFiles;
 
-    OrkaImage * image = mImageCache.at(mFileIndex + 1);
-    image->loadImage();
+//    OrkaImage * image = mImageCache.at(mFileIndex);
+//    image->loadImage();
+//
+//    image = mImageCache.at(mFileIndex + 1);
+//    image->loadImage();
+
     this->cacheLoadNewClearOld();
 
     if (!display_timer_->isActive()) {
-        display_timer_->singleShot(1, this, SLOT(displayNextImage()));
+        display_timer_->singleShot(10, this, SLOT(displayNextImage()));
     }
 }
 
 void ImageSequenceProvider::displayNextImage() {
     OrkaImage * image = mImageCache.at(mFileIndex);
     if (!image->isLoaded()) {
-        return; // safeguard
+        image->loadImage();
+//        return; // safeguard
     }
 
     emit displayImage(image, mFileIndex);
