@@ -76,6 +76,13 @@ void OrkaImage::loadImage() {
     if (format_ == OpenImageIO::TypeDesc::HALF) {
         format_ = OpenImageIO::TypeDesc::FLOAT;
     }
+    color_space_ = spec.get_string_attribute("oiio:ColorSpace", "GammaCorrected");
+    if (color_space_ == "GammaCorrected") {
+        image_gamma_ = spec.get_float_attribute("oiio:Gamma", 2.2);
+    } else {
+        image_gamma_ = 1.0;
+    }
+
     mPixels = (void *) malloc(
             mWidth * mHeight * mChannels * format_.elementsize());
     open_image_->read_image(format_, mPixels);

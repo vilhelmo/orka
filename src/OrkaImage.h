@@ -66,6 +66,9 @@ public:
         }
     }
 
+    float image_gamma() { return image_gamma_; }
+    std::string color_space() { return color_space_; }
+
     // blind pointer to data.
     void * mPixels;
     std::string mFilename;
@@ -76,7 +79,8 @@ private:
     int mWidth;
     int mHeight;
     int mChannels;
-
+    std::string color_space_;
+    float image_gamma_;
 };
 
 } /* namespace orka */

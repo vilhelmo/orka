@@ -112,6 +112,8 @@ void GLImageDisplayWidget::initializeGL() {
     image_matrix_uniform_ = image_program_.uniformLocation("matrix");
     image_texture_uniform_ = image_program_.uniformLocation("imageSampler");
     image_exposure_uniform_ = image_program_.uniformLocation("exposure");
+    image_image_gamma_uniform_ = image_program_.uniformLocation("img_gamma");
+    image_gamma_uniform_ = image_program_.uniformLocation("gamma");
 
     default_program_.removeAllShaders();
     default_program_.addShaderFromSourceFile(QOpenGLShader::Vertex,
@@ -123,6 +125,9 @@ void GLImageDisplayWidget::initializeGL() {
     default_vertex_attr_ = default_program_.attributeLocation("vertex");
     default_color_uniform_ = default_program_.uniformLocation("color");
     default_matrix_uniform_ = default_program_.uniformLocation("matrix");
+    default_exposure_uniform_ = default_program_.uniformLocation("exposure");
+    default_image_gamma_uniform_ = default_program_.uniformLocation("img_gamma");
+    default_gamma_uniform_ = default_program_.uniformLocation("gamma");
 }
 
 void GLImageDisplayWidget::mousePressEvent(QMouseEvent * event) {
@@ -210,7 +215,7 @@ void GLImageDisplayWidget::paintGL() {
 
     image_program_.bind();
     image_program_.setUniformValue(image_matrix_uniform_, modelview);
-    image_program_.setUniformValue(image_exposure_uniform_, view_settings_->exposure());
+
     paintImage();
     image_program_.release();
 
@@ -255,6 +260,9 @@ void GLImageDisplayWidget::paintImage() {
             1.f, 0.f, //
             0.f, 0.f };
 
+    image_program_.setUniformValue(image_exposure_uniform_, view_settings_->exposure());
+    image_program_.setUniformValue(image_image_gamma_uniform_, mCurrentImage->image_gamma());
+    image_program_.setUniformValue(image_gamma_uniform_, view_settings_->gamma());
     image_program_.enableAttributeArray(image_vertex_attr_);
     image_program_.setAttributeArray(image_vertex_attr_, vertices, 2);
     image_program_.enableAttributeArray(image_tex_coord_attr_);
@@ -313,6 +321,10 @@ void GLImageDisplayWidget::paintColorPicker(QPainter & painter, QMatrix4x4 & ima
     QMatrix4x4 ortho_matrix;
     ortho_matrix.ortho(this->rect());
     default_program_.setUniformValue(default_matrix_uniform_, ortho_matrix);
+
+    default_program_.setUniformValue(default_exposure_uniform_, view_settings_->exposure());
+    default_program_.setUniformValue(default_image_gamma_uniform_, mCurrentImage->image_gamma());
+    default_program_.setUniformValue(default_gamma_uniform_, view_settings_->gamma());
 
     default_program_.setUniformValue(default_color_uniform_, pixel_color[0],
             pixel_color[1], pixel_color[2], pixel_color[3]);

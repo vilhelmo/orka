@@ -10,7 +10,7 @@
 namespace orka {
 
 OrkaViewSettings::OrkaViewSettings(QObject * parent) : QObject(parent),
-		tx_(0), ty_(0), zoom_(1.0), exposure_(1.0) {
+		tx_(0), ty_(0), zoom_(1.0), exposure_(1.0), gamma_(2.2) {
 }
 
 OrkaViewSettings::~OrkaViewSettings() {

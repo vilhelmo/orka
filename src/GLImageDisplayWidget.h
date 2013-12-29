@@ -72,11 +72,16 @@ private:
     int image_vertex_attr_, image_tex_coord_attr_;
     int image_matrix_uniform_, image_texture_uniform_;
     int image_exposure_uniform_;
+    int image_image_gamma_uniform_;
+    int image_gamma_uniform_;
     //===
     QOpenGLShaderProgram default_program_;
     int default_vertex_attr_;
     int default_color_uniform_;
     int default_matrix_uniform_;
+    int default_exposure_uniform_;
+    int default_image_gamma_uniform_;
+    int default_gamma_uniform_;
     //===
 
     int mouse_track_x_, mouse_track_y_;
