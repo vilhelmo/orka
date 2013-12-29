@@ -41,8 +41,8 @@ public slots:
 		tx_ = ty_ = 0;
 	}
 	void move(int dx, int dy) {
-		tx_ += dx;
-		ty_ += dy;
+		tx_ += dx / zoom_;
+		ty_ += dy / zoom_;
 	}
 	void increaseExposure() {
 		exposure_ *= 2.0;

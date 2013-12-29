@@ -61,6 +61,7 @@ void ControlBar::setImageProvider(ImageProvider * provider) {
     frame_slider_->setMaximum(framerange.second);
     frame_slider_->setSliderPosition(framerange.first);
 
+    QObject::connect(frame_slider_, SIGNAL(sliderMoved(int)), this, SLOT(frameChanged(int)));
     QObject::connect(stop_button_, SIGNAL(clicked(bool)), image_provider_, SLOT(stop()));
     QObject::connect(start_button_, SIGNAL(clicked(bool)), image_provider_, SLOT(start()));
     QObject::connect(first_frame_button_, SIGNAL(clicked(bool)), this, SLOT(gotoFirstFrame()));
@@ -77,6 +78,10 @@ void ControlBar::gotoFirstFrame() {
 
 void ControlBar::gotoLastFrame() {
     image_provider_->gotoFrame(image_provider_->getFramerange().second);
+}
+
+void ControlBar::frameChanged(int frame) {
+    image_provider_->gotoFrame(frame);
 }
 
 } /* namespace orka */

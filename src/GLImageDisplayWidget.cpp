@@ -244,12 +244,12 @@ void GLImageDisplayWidget::paintImage() {
 
     float half_width = float(mImageWidth)/2.0;
     float half_height = float(mImageHeight)/2.0;
-    float tx = view_settings_->tx()/view_settings_->zoom();
-    float ty = view_settings_->ty()/view_settings_->zoom();
-    float vertices[8] = { -half_width+tx, -half_height+ty, //
-            half_width+tx, -half_height+ty, //
-            half_width+tx, half_height+ty, //
-            -half_width+tx, half_height+ty };
+    float tx = view_settings_->tx();
+    float ty = view_settings_->ty();
+    float vertices[8] = { -half_width + tx, -half_height + ty, //
+            half_width + tx, -half_height + ty, //
+            half_width + tx, half_height + ty, //
+            -half_width + tx, half_height + ty };
     float textureCoords[8] = { 0.f, 1.f, //
             1.f, 1.f, //
             1.f, 0.f, //

@@ -35,6 +35,7 @@ public slots:
     void displayImage(OrkaImage * image, int frame);
     void gotoFirstFrame();
     void gotoLastFrame();
+    void frameChanged(int frame);
 //signals:
 //    void start();
 //    void stop();

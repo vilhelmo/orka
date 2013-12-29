@@ -114,6 +114,8 @@ void ImageSequenceProvider::gotoFrame(int frame) {
     mPrevFileIndex = mFileIndex;
     mFileIndex = (frame - 1) % mNumFiles;
 
+    OrkaImage * image = mImageCache.at(mFileIndex + 1);
+    image->loadImage();
     this->cacheLoadNewClearOld();
 
     if (!display_timer_->isActive()) {
