@@ -25,6 +25,7 @@ Q_OBJECT
 public:
     VLCMovieProvider(const std::string & filename);
     virtual ~VLCMovieProvider();
+    virtual std::pair<int, int> getFramerange();
     void display(void *id);
     void lock(void ** p_pixels);
     void unlock(void *id, void * const *p_pixels);
@@ -33,13 +34,17 @@ private slots:
     void stop();
     void toggleStartStop();
     void jog(int dframes);
+    void gotoFrame(int frame);
 
 private:
     vlc_int * frameData_;
     OrkaImage * currentFrame_;
+
     std::string filename_;
     bool playing_;
     int width_, height_, channels_;
+    float fps_;
+    libvlc_time_t max_time_ms_;
 
     // VLC pointers
     libvlc_instance_t * vlc_instance_;

@@ -64,15 +64,15 @@ int main(int argc, char* argv[]) {
 	}
 	std::cout << std::endl;
 
-	try {
+//	try {
 		Q_INIT_RESOURCE(resources);
 		QApplication a(argc, argv);
 		OrkaApplication app(files);
 		app.showMainWindow();
 		int success = a.exec();
 		return success;
-	} catch (OrkaException * e) {
-		std::cerr << e->what() << std::endl;
-		return 1;
-	}
+//	} catch (OrkaException * e) {
+//		std::cerr << e->what() << std::endl;
+//		return 1;
+//	}
 }

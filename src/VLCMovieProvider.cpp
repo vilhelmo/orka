@@ -36,7 +36,7 @@ static void vlc_unlock(void *data, void *id, void * const *p_pixels) {
 VLCMovieProvider::VLCMovieProvider(const std::string & filename) :
         ImageProvider(), filename_(filename) {
     char const *vlc_argv[] = { "--no-audio", /* skip any audio track */
-            "--no-xlib", /* tell VLC to not use Xlib */
+    "--no-xlib", /* tell VLC to not use Xlib */
             "--verbose=2", // Be much more verbose then normal for debugging purpose
             "--extraintf=logger", // Log anything
             "--ignore-config", // Don't use VLC's config
@@ -56,16 +56,22 @@ VLCMovieProvider::VLCMovieProvider(const std::string & filename) :
     // https://forum.videolan.org/viewtopic.php?f=32&t=84581
     libvlc_media_player_play(vlc_media_player_);
     unsigned int width, height = 0;
+    max_time_ms_ = -1;
     while (width <= 0 || height <= 0) {
         libvlc_video_get_size(vlc_media_player_, 0, &width, &height);
+        if (max_time_ms_ <= 0) {
+            max_time_ms_ = libvlc_media_player_get_length(vlc_media_player_);
+        }
     }
     libvlc_media_player_stop(vlc_media_player_);
     assert(width > 0 && height > 0);
     //====
+    std::cout << "Movie length ms: " << max_time_ms_ << std::endl;
 
     width_ = width;
     height_ = height;
     channels_ = 3;
+    fps_ = 24.0; // TODO: get fps
 
     frameData_ = (vlc_int *) malloc(width_ * height_ * sizeof(vlc_int));
     currentFrame_ = new OrkaImage(width_, height_, channels_);
@@ -88,12 +94,25 @@ VLCMovieProvider::~VLCMovieProvider() {
     delete currentFrame_;
 }
 
+std::pair<int, int> VLCMovieProvider::getFramerange() {
+    // TODO: Figure out how to reliably get fps and length.
+//    libvlc_time_t max_time_ms = libvlc_media_player_get_length(
+//            vlc_media_player_);
+    float fps = 24.0;
+//    float fps = libvlc_media_player_get_fps(vlc_media_player_);
+//    if (fps <= 0.f) {
+//        fps = libvlc_media_player_get_rate(vlc_media_player_);
+//    }
+    return std::make_pair(1, static_cast<float>(1000 * max_time_ms_) * fps);
+}
+
 void VLCMovieProvider::start() {
     libvlc_media_player_play(vlc_media_player_);
 }
 
 void VLCMovieProvider::stop() {
-    libvlc_media_player_stop(vlc_media_player_);
+    libvlc_media_player_pause(vlc_media_player_);
+//    libvlc_media_player_stop(vlc_media_player_);
 }
 
 void VLCMovieProvider::toggleStartStop() {
@@ -109,6 +128,11 @@ void VLCMovieProvider::jog(int dframes) {
             std::min(current_time_ms + 10 * dframes, max_time_ms),
             (libvlc_time_t) 0);
     libvlc_media_player_set_time(vlc_media_player_, current_time_ms);
+}
+
+void VLCMovieProvider::gotoFrame(int frame) {
+    libvlc_time_t goto_ms = 1000 * (static_cast<float>(frame) / fps_);
+    libvlc_media_player_set_time(vlc_media_player_, goto_ms);
 }
 
 void VLCMovieProvider::display(void *id) {
@@ -128,7 +152,7 @@ void VLCMovieProvider::display(void *id) {
 //		currentFrame_->mPixels[i * channels_ + 1] = g / 256.0;
 //		currentFrame_->mPixels[i * channels_ + 2] = b / 256.0;
     }
-    emit displayImage(currentFrame_);
+    emit displayImage(currentFrame_, 1);
 }
 
 void VLCMovieProvider::lock(void ** p_pixels) {

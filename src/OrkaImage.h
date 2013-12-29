@@ -38,34 +38,39 @@ public:
         if (loaded) {
             switch (format_.basetype) {
             case OpenImageIO::TypeDesc::UCHAR:
-                return (float) ((uchar *)mPixels)[(y * mWidth + x) * mChannels + c] / 255.0;
+                return static_cast<float>(static_cast<uchar *>(mPixels)[(y
+                        * mWidth + x) * mChannels + c]) / 255.0;
             case OpenImageIO::TypeDesc::CHAR:
-                return (float) ((char *)mPixels)[(y * mWidth + x) * mChannels + c] / 255.0;
+                return static_cast<float>(static_cast<char *>(mPixels)[(y
+                        * mWidth + x) * mChannels + c]) / 255.0;
             case OpenImageIO::TypeDesc::USHORT:
-                return (float) ((ushort *)mPixels)[(y * mWidth + x) * mChannels + c] / 255.0;
+                return static_cast<float>(static_cast<ushort *>(mPixels)[(y
+                        * mWidth + x) * mChannels + c]) / 255.0;
             case OpenImageIO::TypeDesc::SHORT:
-                return (float) ((short *)mPixels)[(y * mWidth + x) * mChannels + c] / 255.0;
+                return static_cast<float>(static_cast<short *>(mPixels)[(y
+                        * mWidth + x) * mChannels + c]) / 255.0;
             case OpenImageIO::TypeDesc::UINT:
-                return (float) ((uint *)mPixels)[(y * mWidth + x) * mChannels + c] / 255.0;
+                return static_cast<float>(static_cast<uint *>(mPixels)[(y
+                        * mWidth + x) * mChannels + c]) / 255.0;
             case OpenImageIO::TypeDesc::INT:
-                return (float) ((int *)mPixels)[(y * mWidth + x) * mChannels + c] / 255.0;
+                return static_cast<float>(static_cast<int *>(mPixels)[(y
+                        * mWidth + x) * mChannels + c]) / 255.0;
             case OpenImageIO::TypeDesc::FLOAT:
-                return (float) ((float *)mPixels)[(y * mWidth + x) * mChannels + c];
+                return static_cast<float *>(mPixels)[(y * mWidth + x)
+                        * mChannels + c];
             default:
-                return NULL;
-                break;
+                return 0.f;
             }
-    //        return (T) mPixels[(y * mWidth + x) * mChannels + c];
         } else {
-            return NULL;
+            return 0.f;
         }
     }
 
     // blind pointer to data.
     void * mPixels;
+    std::string mFilename;
 private:
     QMutex * mLoadMutex;
-    std::string mFilename;
     OpenImageIO::TypeDesc format_;
     bool mLoaded;
     int mWidth;

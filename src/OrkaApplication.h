@@ -22,6 +22,7 @@ public:
 	OrkaApplication(const std::vector<std::string> & files);
 	virtual ~OrkaApplication();
 	void showMainWindow();
+	OrkaViewSettings * view_settings() { return view_settings_; }
 private:
 	OrkaMainWindow * mainWindow;
 	ImageProvider * mProvider;

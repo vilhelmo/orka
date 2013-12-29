@@ -24,6 +24,7 @@ GLImageDisplayWidget::GLImageDisplayWidget(OrkaViewSettings * view_settings,
     setAutoBufferSwap(false);
 
     setMinimumSize(640, 480);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     // Always enable mouseMove events, not only when the mouse is pressed down.
     setMouseTracking(true);
@@ -51,7 +52,7 @@ void GLImageDisplayWidget::setImageProvider(ImageProvider * provider) {
     mImageProvider = provider;
 }
 
-void GLImageDisplayWidget::displayImage(OrkaImage * image) {
+void GLImageDisplayWidget::displayImage(OrkaImage * image, int frame) {
     mCurrentImage = image;
     image_transferred_ = false;
 }
@@ -243,8 +244,8 @@ void GLImageDisplayWidget::paintImage() {
 
     float half_width = float(mImageWidth)/2.0;
     float half_height = float(mImageHeight)/2.0;
-    float tx = view_settings_->tx();
-    float ty = view_settings_->ty();
+    float tx = view_settings_->tx()/view_settings_->zoom();
+    float ty = view_settings_->ty()/view_settings_->zoom();
     float vertices[8] = { -half_width+tx, -half_height+ty, //
             half_width+tx, -half_height+ty, //
             half_width+tx, half_height+ty, //

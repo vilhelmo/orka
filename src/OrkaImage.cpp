@@ -111,7 +111,6 @@ void OrkaImage::freePixels() {
     QMutexLocker locker(mLoadMutex);
     if (mLoaded) {
         free(mPixels);
-//		delete [] mPixels;
         mLoaded = false;
     }
     locker.unlock();

@@ -13,7 +13,7 @@
 namespace orka {
 
 void ThreadedImageLoader::run() {
-    mImage->loadImage();
+    image_->loadImage();
 }
 
 ImageSequenceProvider::ImageSequenceProvider(
@@ -21,31 +21,29 @@ ImageSequenceProvider::ImageSequenceProvider(
         ImageProvider(), mFiles(files), mFileIndex(0), mPrevFileIndex(-1), mLoadIndex(
                 0) {
     mNumFiles = mFiles.size();
+
+    // Load first image.
     OrkaImage * firstImage = new OrkaImage(mFiles.at(0));
     mImageCache.push_back(firstImage);
     firstImage->loadImage();
+
+    // Approximate cache size
     int approxSize = firstImage->approxSize();
     // TODO: Let the user configure cache size
     int cacheSize = 200 * 1000 * 1000; // 200 mb
     mCacheSizeNumImages = cacheSize / approxSize;
+    mNumCachedFiles = 0;
+    mNumCachedSemaphore = new QSemaphore(mCacheSizeNumImages);
+
+    // Create the rest of the images.
     for (int i = 1; i < mNumFiles; i += 1) {
         std::string filename = mFiles.at(i);
         OrkaImage * image = new OrkaImage(filename);
         mImageCache.push_back(image);
     }
 
-    // Load first N images;
-    for (OrkaImage * image : mImageCache) {
-        ThreadedImageLoader * imageLoaderThread = new ThreadedImageLoader(
-                image);
-        mImageLoaderThreadPool.start(imageLoaderThread);
-        mLoadIndex += 1;
-        if (mLoadIndex > mCacheSizeNumImages) {
-            break;
-        }
-    }
-    mLoadIndex = mLoadIndex % mNumFiles;
-    assert(mImageCache.size() == mFiles.size());
+    // Start loading some images into the cache.
+    this->cacheLoadNewClearOld();
 
     display_timer_ = new QTimer();
     QObject::connect(display_timer_, SIGNAL(timeout()), this,
@@ -56,6 +54,35 @@ ImageSequenceProvider::~ImageSequenceProvider() {
     for (OrkaImage * im : mImageCache) {
         delete im;
     }
+}
+
+void ImageSequenceProvider::cacheLoadNewClearOld() {
+    if (mCacheSizeNumImages > mNumFiles) {
+        return;
+    }
+    // Not all images fit in cache. Free one and load a new one up.
+    // Free last image displayed.
+    if (mPrevFileIndex >= 0) {
+        OrkaImage * image = mImageCache.at(mPrevFileIndex);
+        if (image->isLoaded()) {
+            image->freePixels();
+        }
+    }
+
+    if (mLoadIndex != (mFileIndex + mCacheSizeNumImages - 1) % mNumFiles) {
+        // Recache.
+        mLoadIndex = mFileIndex;
+    }
+    while (mLoadIndex != (mFileIndex + mCacheSizeNumImages - 1) % mNumFiles) {
+        ThreadedImageLoader * image_loader_thread = new ThreadedImageLoader(
+                mImageCache.at(mLoadIndex));
+        QThreadPool::globalInstance()->start(image_loader_thread);
+        mLoadIndex = (mLoadIndex + 1) % mNumFiles;
+    }
+}
+
+std::pair<int, int> ImageSequenceProvider::getFramerange() {
+    return std::make_pair(1, mNumFiles);
 }
 
 void ImageSequenceProvider::start() {
@@ -80,15 +107,14 @@ void ImageSequenceProvider::toggleStartStop() {
 }
 
 void ImageSequenceProvider::jog(int dframes) {
-    // TODO: delete old frames from memory
+    gotoFrame(mFileIndex + dframes);
+}
+
+void ImageSequenceProvider::gotoFrame(int frame) {
     mPrevFileIndex = mFileIndex;
-    mFileIndex = std::max(std::min(mFileIndex + dframes, mNumFiles - 1), 0);
-    mLoadIndex = mFileIndex;
-    // Load the new image up.
-    ThreadedImageLoader * imageLoaderThread = new ThreadedImageLoader(
-            mImageCache.at(mLoadIndex));
-    mImageLoaderThreadPool.start(imageLoaderThread);
-    mLoadIndex = (mLoadIndex + 1) % mNumFiles;
+    mFileIndex = (frame - 1) % mNumFiles;
+
+    this->cacheLoadNewClearOld();
 
     if (!display_timer_->isActive()) {
         display_timer_->singleShot(1, this, SLOT(displayNextImage()));
@@ -96,26 +122,17 @@ void ImageSequenceProvider::jog(int dframes) {
 }
 
 void ImageSequenceProvider::displayNextImage() {
-    if (mCacheSizeNumImages < mNumFiles &&
-            mPrevFileIndex >= 0) {
-        // Not all images fit in cache. Free one and load a new one up.
-        //int prevIdx = (mNumFiles + mFileIndex - 1) % mNumFiles;
-        // Free last image displayed.
-        //mImageCache.at(prevIdx)->freePixels();
-        mImageCache.at(mPrevFileIndex)->freePixels();
-
-        // Load another image.
-        ThreadedImageLoader * imageLoaderThread = new ThreadedImageLoader(
-                mImageCache.at(mLoadIndex));
-        mImageLoaderThreadPool.start(imageLoaderThread);
-        mLoadIndex = (mLoadIndex + 1) % mNumFiles;
+    OrkaImage * image = mImageCache.at(mFileIndex);
+    if (!image->isLoaded()) {
+        return; // safeguard
     }
 
-    OrkaImage * image = mImageCache.at(mFileIndex);
+    emit displayImage(image, mFileIndex);
+
+    this->cacheLoadNewClearOld();
+
     mPrevFileIndex = mFileIndex;
     mFileIndex = (mFileIndex + 1) % mNumFiles;
-
-    emit displayImage(image);
 }
 
 } /* namespace orka */

@@ -36,7 +36,7 @@ public slots:
     void togglePlayPause();
     void setImageProvider(ImageProvider * provider);
 protected slots:
-    void displayImage(OrkaImage * image);
+    void displayImage(OrkaImage * image, int frame);
     void fitZoomToWindow();
 protected:
     void loadImage();

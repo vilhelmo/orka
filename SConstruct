@@ -58,6 +58,7 @@ sourceFiles = [ 'GLImageDisplayWidget.cpp',
                 'OrkaApplication.cpp', 
                 'OrkaImage.cpp',
                 'OrkaMainWindow.cpp',
+                'ControlBar.cpp',
                 'OrkaViewSettings.cpp',
                 'orka.cpp'
               ]

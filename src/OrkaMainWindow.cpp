@@ -11,14 +11,23 @@
 
 #include "OrkaViewSettings.h"
 #include "ImageProvider.h"
+#include "ControlBar.h"
 
 namespace orka {
 
-OrkaMainWindow::OrkaMainWindow(OrkaViewSettings * view_settings)
-{
-	mGLImageDisplayWidget = new GLImageDisplayWidget(view_settings);
+OrkaMainWindow::OrkaMainWindow(OrkaViewSettings * view_settings) {
+    image_display_gl_widget_ = new GLImageDisplayWidget(view_settings);
 
-    this->setCentralWidget(mGLImageDisplayWidget);
+    central_widget_ = new QWidget(this);
+    QVBoxLayout * central_layout = new QVBoxLayout(central_widget_);
+    central_widget_->setLayout(central_layout);
+//    QLayout * central_layout = central_widget_->layout();
+    central_layout->addWidget(image_display_gl_widget_);
+    control_bar_ = new ControlBar(this);
+    central_layout->addWidget(control_bar_);
+//    central_layout->setStretchFactor(image_display_gl_widget_, 0);
+//    central_layout->setStretchFactor(control_bar_, 0);
+    this->setCentralWidget(central_widget_); //image_display_gl_widget_);
 
     QMenu *fileMenu = new QMenu("File");
     QMenu *controlMenu = new QMenu("Control");
@@ -53,17 +62,28 @@ OrkaMainWindow::OrkaMainWindow(OrkaViewSettings * view_settings)
 
     QObject::connect(exit, SIGNAL(triggered(bool)), this, SLOT(close()));
     QObject::connect(aboutQt, SIGNAL(triggered(bool)), qApp, SLOT(aboutQt()));
-    QObject::connect(togglePlayPause, SIGNAL(triggered(bool)), mGLImageDisplayWidget, SLOT(togglePlayPause()));
-    QObject::connect(increase_exposure, SIGNAL(triggered(bool)), view_settings, SLOT(increaseExposure()));
-    QObject::connect(decrease_exposure, SIGNAL(triggered(bool)), view_settings, SLOT(decreaseExposure()));
-    QObject::connect(reset_zoom, SIGNAL(triggered(bool)), view_settings, SLOT(resetZoom()));
-    QObject::connect(fit_zoom, SIGNAL(triggered(bool)), mGLImageDisplayWidget, SLOT(fitZoomToWindow()));
+    QObject::connect(togglePlayPause, SIGNAL(triggered(bool)),
+            image_display_gl_widget_, SLOT(togglePlayPause()));
+    QObject::connect(increase_exposure, SIGNAL(triggered(bool)), view_settings,
+            SLOT(increaseExposure()));
+    QObject::connect(decrease_exposure, SIGNAL(triggered(bool)), view_settings,
+            SLOT(decreaseExposure()));
+    QObject::connect(reset_zoom, SIGNAL(triggered(bool)), view_settings,
+            SLOT(resetZoom()));
+    QObject::connect(fit_zoom, SIGNAL(triggered(bool)),
+            image_display_gl_widget_, SLOT(fitZoomToWindow()));
 }
 
 void OrkaMainWindow::setImageProvider(ImageProvider * provider) {
-	mGLImageDisplayWidget->setImageProvider(provider);
-	QObject::connect(provider, SIGNAL(displayImage(OrkaImage *)), mGLImageDisplayWidget, SLOT(displayImage(OrkaImage *)));
-    mGLImageDisplayWidget->start();
+    image_display_gl_widget_->setImageProvider(provider);
+    QObject::connect(provider, SIGNAL(displayImage(OrkaImage *, int)),
+            image_display_gl_widget_, SLOT(displayImage(OrkaImage *, int)));
+
+    control_bar_->setImageProvider(provider);
+    QObject::connect(provider, SIGNAL(displayImage(OrkaImage *, int)),
+            control_bar_, SLOT(displayImage(OrkaImage *, int)));
+
+    image_display_gl_widget_->start();
 }
 
 } // end namespace orka
