@@ -17,11 +17,6 @@ namespace orka {
 
 class OrkaImage;
 
-class ImageTimeStruct {
-public:
-    OrkaImage * image;
-    int displayTimeMs;
-};
 
 class ImageProvider: public QObject {
 Q_OBJECT

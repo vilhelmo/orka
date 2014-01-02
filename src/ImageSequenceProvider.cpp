@@ -135,7 +135,7 @@ void ImageSequenceProvider::displayNextImage() {
 //        return; // safeguard
     }
 
-    emit displayImage(image, mFileIndex);
+    emit displayImage(image, mFileIndex+1);
 
     this->cacheLoadNewClearOld();
 

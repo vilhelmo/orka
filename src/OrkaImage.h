@@ -10,6 +10,7 @@
 
 #include <QMutex>
 #include <OpenImageIO/imageio.h>
+#include <OpenImageIO/imagecache.h>
 #include <GL/gl.h>
 
 #include <string>
@@ -19,6 +20,7 @@ namespace orka {
 class OrkaImage {
  public:
     OrkaImage(std::string filename);
+    OrkaImage(OpenImageIO::ImageCache * cache, std::string filename);
     OrkaImage(int width, int height, int channels);
     OrkaImage(const OrkaImage & other);
     virtual ~OrkaImage();

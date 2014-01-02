@@ -145,9 +145,9 @@ void VLCMovieProvider::display(void *id) {
         int g = (data >> 8) & mask;
         int r = (data >> 16) & mask;
 //		int a = (data >> 24) & mask;
-        ((uchar*) currentFrame_->mPixels)[i * channels_ + 0] = r;
-        ((uchar*) currentFrame_->mPixels)[i * channels_ + 1] = g;
-        ((uchar*) currentFrame_->mPixels)[i * channels_ + 2] = b;
+        ((uchar*) currentFrame_->pixel_data_)[i * channels_ + 0] = r;
+        ((uchar*) currentFrame_->pixel_data_)[i * channels_ + 1] = g;
+        ((uchar*) currentFrame_->pixel_data_)[i * channels_ + 2] = b;
 //		currentFrame_->mPixels[i * channels_] = r / 256.0;
 //		currentFrame_->mPixels[i * channels_ + 1] = g / 256.0;
 //		currentFrame_->mPixels[i * channels_ + 2] = b / 256.0;

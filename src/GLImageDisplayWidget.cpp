@@ -61,6 +61,7 @@ void GLImageDisplayWidget::set_image_provider(ImageProvider * provider) {
 void GLImageDisplayWidget::displayImage(OrkaImage * image, int frame) {
     current_image_ = image;
     image_transferred_ = false;
+    loadImage();
 }
 
 void GLImageDisplayWidget::fitZoomToWindow() {
@@ -252,8 +253,6 @@ void GLImageDisplayWidget::paintGL() {
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-
-    loadImage();
 
     QMatrix4x4 modelview;
     paintImage(&modelview);

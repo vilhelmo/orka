@@ -54,6 +54,7 @@ env.Uic5(Glob('*.ui'))
 
 sourceFiles = [ 'GLImageDisplayWidget.cpp',
                 'ImageProvider.cpp',
+                'ImageCacheProvider.cpp',
                 'ImageSequenceProvider.cpp',
                 'VLCMovieProvider.cpp',
                 'OrkaApplication.cpp', 
