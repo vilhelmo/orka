@@ -26,6 +26,9 @@ public:
     VLCMovieProvider(const std::string & filename);
     virtual ~VLCMovieProvider();
     virtual std::pair<int, int> getFramerange();
+    virtual std::string getColorSpace() {
+        return "GammaCorrected";
+    }
     void display(void *id);
     void lock(void ** p_pixels);
     void unlock(void *id, void * const *p_pixels);

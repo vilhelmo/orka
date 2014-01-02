@@ -13,6 +13,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QHBoxLayout>
+#include <QIcon>
 
 #include "ImageProvider.h"
 
@@ -23,10 +24,14 @@ ControlBar::ControlBar(QWidget * parent) :
     QHBoxLayout * layout = new QHBoxLayout(this);
     this->setLayout(layout);
 
-    first_frame_button_ = new QPushButton("|<");
-    stop_button_ = new QPushButton("#");
-    start_button_ = new QPushButton(">");
-    last_frame_button_ = new QPushButton(">|");
+    first_frame_button_ = new QPushButton(QIcon("media-skip-backward.png"), "");
+    stop_button_ = new QPushButton(QIcon("media-playback-stop.png"), "");
+    start_button_ = new QPushButton(QIcon("media-playback-start.png"), "");
+    last_frame_button_ = new QPushButton(QIcon("media-skip-forward.png"), "");
+    first_frame_button_->setFlat(true);
+    stop_button_->setFlat(true);
+    start_button_->setFlat(true);
+    last_frame_button_->setFlat(true);
 //    first_frame_button_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
 //    stop_button_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
 //    start_button_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);

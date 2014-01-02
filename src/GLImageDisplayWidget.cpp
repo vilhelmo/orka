@@ -4,6 +4,9 @@
 #include <QPaintEngine>
 #include <math.h>
 
+#include <OpenColorIO/OpenColorIO.h>
+namespace OCIO = OCIO_NAMESPACE;
+
 #include "OrkaImage.h"
 #include "ImageProvider.h"
 #include "OrkaViewSettings.h"
@@ -74,25 +77,101 @@ void GLImageDisplayWidget::loadImage() {
     if (!mCurrentImage || image_transferred_)
         return;
 
-//    std::cout << "Load image..." << std::endl;
 //	assert(mCurrentImage->channels() == 3); // TODO: Support != 3 rgb channels
     mImageWidth = mCurrentImage->width();
     mImageHeight = mCurrentImage->height();
 
-    glBindTexture(GL_TEXTURE_2D, gl_image_tex_id);
+    GLenum formats [] = {0, GL_RED, GL_RG, GL_RGB, GL_RGBA};
+    glActiveTexture(GL_TEXTURE0 + IMAGE_TEX_INDEX);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, gl_texture_ids_[IMAGE_TEX_INDEX]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, mCurrentImage->width(),
-            mCurrentImage->height(), 0, GL_RGB, mCurrentImage->glType(),
+            mCurrentImage->height(), 0, formats[mCurrentImage->channels()], mCurrentImage->glType(),
             (GLvoid *) mCurrentImage->getPixels());
     glBindTexture(GL_TEXTURE_2D, 0);
     image_transferred_ = true;
 }
 
+QString readFile(QString filename) {
+    QFile file(filename);
+    QString result;
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return result;
+
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        result.append(line + "\n");
+    }
+    return result;
+}
+
 void GLImageDisplayWidget::initializeGL() {
+
+    glGenTextures(2, gl_texture_ids_);
+
+    //== tmp: testing ocio.
+    QString image_fragment_shader_text = readFile("image_fragment.glsl");
+    try {
+        const std::map<std::string, std::string> colorSpaceMapping = {
+                {"Linear", "scene_linear"},
+                {"GammaCorrected", "reference"},
+                {"sRGB", "reference"},
+                {"AdobeRGB", "reference"},
+                {"Rec709", "reference"},
+                {"KodakLog", "compositing_log"},
+        };
+        auto color_space_role_iterator = colorSpaceMapping.find(mImageProvider->getColorSpace());
+        std::string ocio_role = "default";
+        if (color_space_role_iterator != colorSpaceMapping.end()) {
+            ocio_role = color_space_role_iterator->second;
+        }
+        std::cout << "Color space: " << mImageProvider->getColorSpace() << " role: " << ocio_role << std::endl;
+
+        OCIO::ConstConfigRcPtr config = OCIO::GetCurrentConfig();
+        // If the user hasn't picked a display, use the defaults...
+        const char * device = config->getDefaultDisplay(); //getDefaultDisplayDeviceName();
+        const char * view = config->getDefaultView(device); //DisplayTransformName(device);
+        const char * displayColorSpace = config->getDisplayColorSpaceName(device, view);
+
+        OCIO::ConstProcessorRcPtr processor = config->getProcessor(
+                ocio_role.c_str(), displayColorSpace);
+
+        OCIO::GpuShaderDesc shaderDesc;
+        shaderDesc.setLanguage(OCIO::GPU_LANGUAGE_GLSL_1_0);
+        shaderDesc.setFunctionName("OCIODisplay");
+        const int LUT3D_EDGE_SIZE = 64;
+        shaderDesc.setLut3DEdgeLen(LUT3D_EDGE_SIZE);
+
+        int num3Dentries = 3*LUT3D_EDGE_SIZE*LUT3D_EDGE_SIZE*LUT3D_EDGE_SIZE;
+
+        lut3d_.resize(num3Dentries);
+        processor->getGpuLut3D(&lut3d_[0], shaderDesc);
+        const char * lut_shader_text = processor->getGpuShaderText(shaderDesc);
+        image_fragment_shader_text.prepend(lut_shader_text);
+
+        glActiveTexture(GL_TEXTURE0 + LUT_TEX_INDEX);
+        glEnable(GL_TEXTURE_3D);
+        glBindTexture(GL_TEXTURE_3D, gl_texture_ids_[LUT_TEX_INDEX]);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB,
+                     LUT3D_EDGE_SIZE, LUT3D_EDGE_SIZE, LUT3D_EDGE_SIZE,
+                     0, GL_RGB,GL_FLOAT, &lut3d_[0]);
+        glBindTexture(GL_TEXTURE_3D, 0);
+    } catch (OCIO::Exception & exception) {
+        std::cerr << "OpenColorIO Error: " << exception.what() << std::endl;
+    }
+    //==
+
     glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
 
+    glActiveTexture(GL_TEXTURE0 + IMAGE_TEX_INDEX);
     glEnable(GL_TEXTURE_2D);
-    glGenTextures(1, &gl_image_tex_id);
-    glBindTexture(GL_TEXTURE_2D, gl_image_tex_id);
+    glBindTexture(GL_TEXTURE_2D, gl_texture_ids_[IMAGE_TEX_INDEX]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     // TODO: Make linear/nearest texture filtering configurable.
@@ -103,14 +182,15 @@ void GLImageDisplayWidget::initializeGL() {
     image_program_.removeAllShaders();
     image_program_.addShaderFromSourceFile(QOpenGLShader::Vertex,
             QString("image_vertex.glsl"));
-    image_program_.addShaderFromSourceFile(QOpenGLShader::Fragment,
-            QString("image_fragment.glsl"));
+    image_program_.addShaderFromSourceCode(QOpenGLShader::Fragment,
+            image_fragment_shader_text);
     image_program_.link();
 
     image_vertex_attr_ = image_program_.attributeLocation("vertex");
     image_tex_coord_attr_ = image_program_.attributeLocation("uv");
     image_matrix_uniform_ = image_program_.uniformLocation("matrix");
     image_texture_uniform_ = image_program_.uniformLocation("imageSampler");
+    image_lutSampler_uniform_ = image_program_.uniformLocation("lutSampler");
     image_exposure_uniform_ = image_program_.uniformLocation("exposure");
     image_image_gamma_uniform_ = image_program_.uniformLocation("img_gamma");
     image_gamma_uniform_ = image_program_.uniformLocation("gamma");
@@ -243,9 +323,11 @@ void GLImageDisplayWidget::paintGL() {
 }
 
 void GLImageDisplayWidget::paintImage() {
-    glEnable(GL_TEXTURE_2D);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, gl_image_tex_id);
+    glActiveTexture(GL_TEXTURE0 + 0);
+    glBindTexture(GL_TEXTURE_3D, gl_texture_ids_[LUT_TEX_INDEX]);
+
+    glActiveTexture(GL_TEXTURE0 + 1);
+    glBindTexture(GL_TEXTURE_2D, gl_texture_ids_[IMAGE_TEX_INDEX]);
 
     float half_width = float(mImageWidth)/2.0;
     float half_height = float(mImageHeight)/2.0;
@@ -268,13 +350,18 @@ void GLImageDisplayWidget::paintImage() {
     image_program_.enableAttributeArray(image_tex_coord_attr_);
     image_program_.setAttributeArray(image_tex_coord_attr_, textureCoords, 2);
 
-    image_program_.setUniformValue(image_texture_uniform_, 0); // use texture unit 0
+    image_program_.setUniformValue(image_texture_uniform_, IMAGE_TEX_INDEX);
+    image_program_.setUniformValue(image_lutSampler_uniform_, LUT_TEX_INDEX);
 
     glDrawArrays(GL_QUADS, 0, 4);
 
     image_program_.disableAttributeArray(image_vertex_attr_);
     image_program_.disableAttributeArray(image_tex_coord_attr_);
+
+    glActiveTexture(GL_TEXTURE0 + IMAGE_TEX_INDEX);
     glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE0 + LUT_TEX_INDEX);
+    glBindTexture(GL_TEXTURE_3D, 0);
 }
 
 void GLImageDisplayWidget::paintColorPicker(QPainter & painter, QMatrix4x4 & image_transform) {

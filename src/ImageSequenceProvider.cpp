@@ -27,6 +27,8 @@ ImageSequenceProvider::ImageSequenceProvider(
     mImageCache.push_back(firstImage);
     firstImage->loadImage();
 
+    first_image_color_space_ = firstImage->color_space();
+
     // Approximate cache size
     int approxSize = firstImage->approxSize();
     // TODO: Let the user configure cache size
@@ -83,6 +85,11 @@ void ImageSequenceProvider::cacheLoadNewClearOld() {
 
 std::pair<int, int> ImageSequenceProvider::getFramerange() {
     return std::make_pair(1, mNumFiles);
+}
+
+
+std::string ImageSequenceProvider::getColorSpace() {
+    return first_image_color_space_;
 }
 
 void ImageSequenceProvider::start() {

@@ -12,6 +12,9 @@
 
 #include <QApplication>
 
+#include <OpenColorIO/OpenColorIO.h>
+namespace OCIO = OCIO_NAMESPACE;
+
 #include "OrkaApplication.h"
 #include "OrkaException.h"
 
@@ -63,6 +66,17 @@ int main(int argc, char* argv[]) {
 		std::cout << " " << file;
 	}
 	std::cout << std::endl;
+
+    try {
+        OCIO::ConstConfigRcPtr config = OCIO::GetCurrentConfig();
+        OCIO::ConstProcessorRcPtr processor = config->getProcessor(
+                OCIO::ROLE_COMPOSITING_LOG, OCIO::ROLE_SCENE_LINEAR);
+
+//        OCIO::PackedImageDesc img(imageData, w, h, 4);
+//        processor->apply(img);
+    } catch (OCIO::Exception & exception) {
+        std::cerr << "OpenColorIO Error: " << exception.what() << std::endl;
+    }
 
 //	try {
 		Q_INIT_RESOURCE(resources);

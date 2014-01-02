@@ -25,6 +25,7 @@ libDirs = ['/usr/lib',
 
 libraries = [
             'GL',
+            'OpenColorIO',
             'OpenImageIO', 
             'vlc',
             ]

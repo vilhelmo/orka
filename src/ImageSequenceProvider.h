@@ -42,6 +42,7 @@ public:
     virtual ~ImageSequenceProvider();
     void cacheLoadNewClearOld();
     virtual std::pair<int, int> getFramerange();
+    virtual std::string getColorSpace();
 private slots:
     void start();
     void stop();
@@ -54,6 +55,7 @@ private:
     QTimer * display_timer_;
 //    QThreadPool mImageLoaderThreadPool;
     int mCacheSizeNumImages;
+    std::string first_image_color_space_;
 
     std::vector<std::string> mFiles;
     int mNumFiles;

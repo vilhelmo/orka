@@ -88,11 +88,13 @@ void OrkaImage::loadImage() {
     open_image_->read_image(format_, mPixels);
     open_image_->close();
     delete open_image_;
+
     mLoaded = true;
     locker.unlock();
 //    clock_t end = clock();
 //    std::cout << "read image in " << ((float) end - start) / CLOCKS_PER_SEC
 //            << " secs." << std::endl;
+
 }
 
 bool OrkaImage::isLoaded() {

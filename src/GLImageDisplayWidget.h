@@ -66,11 +66,16 @@ private:
     int frames;
     QTime time;
 
+    std::vector<float> lut3d_;
+
     //===
     QOpenGLShaderProgram image_program_;
-    GLuint gl_image_tex_id;
+    const static int LUT_TEX_INDEX = 0;
+    const static int IMAGE_TEX_INDEX = 1;
+    GLuint gl_texture_ids_[2];
     int image_vertex_attr_, image_tex_coord_attr_;
     int image_matrix_uniform_, image_texture_uniform_;
+    int image_lutSampler_uniform_;
     int image_exposure_uniform_;
     int image_image_gamma_uniform_;
     int image_gamma_uniform_;

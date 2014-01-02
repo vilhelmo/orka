@@ -9,6 +9,7 @@
 #define IMAGEPROVIDER_H_
 
 #include <utility>
+#include <string>
 #include <QObject>
 
 namespace orka {
@@ -27,6 +28,8 @@ public:
 	ImageProvider();
 	virtual ~ImageProvider();
 	virtual std::pair<int, int> getFramerange() = 0;
+    virtual std::string getColorSpace() = 0;
+
 public slots:
 	virtual void start() = 0;
 	virtual void stop() = 0;
