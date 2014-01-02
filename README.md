@@ -3,19 +3,24 @@ orka
 
 Linux image viewer/player
 
+![Screenshot](orka_screenshot.png)
+
 TODO
 ====
-* Create control bar widget at the bottom, play pause stop, time/frame-slider etc.
-* Support opencolorio
-* Create settings window for gamma control, exposure, LUT and any other image settings we can think of.
-* Create commands to reset viewport to different sizes (1-to-1 pixel, adjust to screen size, double size, half size etc)
+- [ ] Bugfixes related to the time-slider.
+- [ ] Create settings window for gamma control, exposure, LUT and any other image settings we can think of.
+- [x] Create commands to reset viewport to different sizes (1-to-1 pixel, adjust to screen size, double size, half size etc)
+- [x] Support opencolorio
+- [x] Create control bar widget at the bottom, play pause stop, time/frame-slider etc.
 
 Test Images
 ====
 I ran the following to download a few hundred frames from Big Buck Bunny (http://www.bigbuckbunny.org/) to the current folder:
+```
 for frame in `seq 379 553`; do 
 wget http://media.xiph.org/BBB/BBB-1080-png/big_buck_bunny_00$frame.png; 
 done
+```
 
 Test movies
 ====
