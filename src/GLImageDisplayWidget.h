@@ -1,19 +1,17 @@
-#ifndef GLWIDGET_H
-#define GLWIDGET_H
+#ifndef SRC_GLIMAGEDISPLAYWIDGET_H_
+#define SRC_GLIMAGEDISPLAYWIDGET_H_
 
-#include <cmath>
+#include <OpenImageIO/imageio.h>
 
 #include <QGLWidget>
-#include <QtGui/qvector3d.h>
-#include <QtGui/qmatrix4x4.h>
-//#include <QtOpenGL/qglshaderprogram.h>
+#include <QMatrix4x4>
 #include <QtOpenGL>
 #include <QTime>
 #include <QTimer>
-#include <QVector>
 #include <QMutex>
 
-#include <OpenImageIO/imageio.h>
+#include <cmath>
+#include <vector>
 
 namespace orka {
 
@@ -27,18 +25,22 @@ enum MouseDragStatus {
 
 class GLImageDisplayWidget: public QGLWidget {
 Q_OBJECT
-public:
+
+ public:
     GLImageDisplayWidget(OrkaViewSettings * view_settings, QWidget *parent = 0);
     ~GLImageDisplayWidget();
-public slots:
+
+ public slots:
     void start();
     void stop();
     void togglePlayPause();
-    void setImageProvider(ImageProvider * provider);
-protected slots:
+    void set_image_provider(ImageProvider * provider);
+
+ protected slots:
     void displayImage(OrkaImage * image, int frame);
     void fitZoomToWindow();
-protected:
+
+ protected:
     void loadImage();
     void initializeGL();
 
@@ -46,44 +48,45 @@ protected:
     void mouseMoveEvent(QMouseEvent * event);
     void mouseReleaseEvent(QMouseEvent * event);
     void wheelEvent(QWheelEvent * event);
-private:
+
+ private:
     void paintGL();
     void doPaint(const float * vertices,
             const float * texture_coords, const QMatrix4x4 & transform);
-    void paintImage(QMatrix4x4 & modelview);
-    void paintColorPicker(QPainter & painter, QMatrix4x4 & image_transform);
+    void paintImage(QMatrix4x4 * modelview);
+    void paintColorPicker(QPainter * painter, const QMatrix4x4 & image_transform);
 
     OrkaViewSettings * view_settings_;
     MouseDragStatus mouse_drag_status_;
     int mouse_drag_x_, mouse_drag_y_;
+    int mouse_track_x_, mouse_track_y_;
 
-    ImageProvider * mImageProvider;
-    OrkaImage * mCurrentImage;
-    int mImageWidth;
-    int mImageHeight;
+    ImageProvider * image_provider_;
+    OrkaImage * current_image_;
+    int image_width_;
+    int image_height_;
     bool image_transferred_;
 
-    QTimer * mGLUpdateTimer;
+    QTimer * gl_update_timer_;
 
-    int frames;
-    QTime time;
+    int frame_of_a_hundred_;
+    QTime fps_time_;
 
-    std::vector<float> lut3d_;
+    std::vector<float> lut3d_data_;
 
-    //===
     QOpenGLShaderProgram image_program_;
-    const static int LUT_TEX_INDEX = 0;
-    const static int IMAGE_TEX_INDEX = 1;
+    static const int LUT_TEX_INDEX = 0;
+    static const int IMAGE_TEX_INDEX = 1;
     GLuint gl_texture_ids_[2];
-    int image_vertex_attr_, image_tex_coord_attr_;
-    int image_matrix_uniform_, image_texture_uniform_;
+    int image_vertex_attr_;
+    int image_tex_coord_attr_;
+
+    int image_matrix_uniform_;
+    int image_texture_uniform_;
     int image_lutSampler_uniform_;
     int image_exposure_uniform_;
-    //===
-
-    int mouse_track_x_, mouse_track_y_;
 };
 
-} // end namespace orka
+}  // end namespace orka
 
-#endif
+#endif  // SRC_GLIMAGEDISPLAYWIDGET_H_

@@ -12,8 +12,9 @@
 #include "ImageSequenceProvider.h"
 #include "VLCMovieProvider.h"
 
-#include <iostream>
 #include <OpenImageIO/imageio.h>
+
+#include <iostream>
 
 namespace orka {
 
@@ -36,21 +37,20 @@ public:
 
 OrkaApplication::OrkaApplication(const std::vector<std::string> & files) {
 	view_settings_ = new OrkaViewSettings();
-	mProvider = ImageProviderFactory::createProvider(files);
-	mainWindow = new OrkaMainWindow(view_settings_);
-	mainWindow->setImageProvider(mProvider);
+	image_provider_ = ImageProviderFactory::createProvider(files);
+	main_window_ = new OrkaMainWindow(view_settings_);
+	main_window_->set_image_provider(image_provider_);
 }
 
 OrkaApplication::~OrkaApplication() {
-	mainWindow->hide();
-	delete mainWindow;
-	delete mProvider;
+    main_window_->hide();
+	delete main_window_;
+	delete image_provider_;
 	delete view_settings_;
 }
 
 void OrkaApplication::showMainWindow() {
-	std::cout << "show main window" << std::endl;
-	mainWindow->show();
+	main_window_->show();
 }
 
 } /* namespace orka */

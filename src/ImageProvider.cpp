@@ -10,11 +10,9 @@
 namespace orka {
 
 ImageProvider::ImageProvider() {
-
 }
 
 ImageProvider::~ImageProvider() {
-
 }
 
 

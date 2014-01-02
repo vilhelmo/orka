@@ -5,8 +5,8 @@
  *      Author: vilhelm
  */
 
-#ifndef CONTROLBAR_H_
-#define CONTROLBAR_H_
+#ifndef SRC_CONTROLBAR_H_
+#define SRC_CONTROLBAR_H_
 
 #include <QWidget>
 #include <QPushButton>
@@ -19,7 +19,8 @@ class OrkaImage;
 
 class ControlBar: public QWidget {
     Q_OBJECT
-public:
+
+ public:
     ControlBar(QWidget * parent = NULL);
     virtual ~ControlBar();
 
@@ -30,17 +31,14 @@ public:
         return QSize(100, 50);
     }
 
-public slots:
-    void setImageProvider(ImageProvider * provider);
+ public slots:
+    void set_image_provider(ImageProvider * provider);
     void displayImage(OrkaImage * image, int frame);
     void gotoFirstFrame();
     void gotoLastFrame();
     void frameChanged(int frame);
-//signals:
-//    void start();
-//    void stop();
-//    void changeFrame(int frame);
-private:
+
+ private:
     QPushButton * first_frame_button_;
     QPushButton * stop_button_;
     QPushButton * start_button_;
@@ -51,4 +49,4 @@ private:
 };
 
 } /* namespace orka */
-#endif /* CONTROLBAR_H_ */
+#endif  // SRC_CONTROLBAR_H_

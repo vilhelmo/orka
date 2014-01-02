@@ -5,8 +5,8 @@
  *      Author: vilhelm
  */
 
-#ifndef ORKAAPPLICATION_H_
-#define ORKAAPPLICATION_H_
+#ifndef SRC_ORKAAPPLICATION_H_
+#define SRC_ORKAAPPLICATION_H_
 
 #include <string>
 #include <vector>
@@ -24,10 +24,12 @@ public:
 	void showMainWindow();
 	OrkaViewSettings * view_settings() { return view_settings_; }
 private:
-	OrkaMainWindow * mainWindow;
-	ImageProvider * mProvider;
+	OrkaMainWindow * main_window_;
+	ImageProvider * image_provider_;
 	OrkaViewSettings * view_settings_;
 };
 
 } /* namespace orka */
-#endif /* ORKAAPPLICATION_H_ */
+
+
+#endif  // SRC_ORKAAPPLICATION_H_

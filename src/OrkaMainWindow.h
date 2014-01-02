@@ -10,13 +10,14 @@ class ControlBar;
 class ImageProvider;
 class OrkaViewSettings;
 
-class OrkaMainWindow : public QMainWindow
-{
-    Q_OBJECT
-public:
+class OrkaMainWindow: public QMainWindow {
+Q_OBJECT
+
+ public:
     OrkaMainWindow(OrkaViewSettings * view_settings);
-	void setImageProvider(ImageProvider * provider);
-private:
+    void set_image_provider(ImageProvider * provider);
+
+ private:
     QWidget * central_widget_;
     ControlBar * control_bar_;
     GLImageDisplayWidget * image_display_gl_widget_;

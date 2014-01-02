@@ -74,12 +74,12 @@ OrkaMainWindow::OrkaMainWindow(OrkaViewSettings * view_settings) {
             image_display_gl_widget_, SLOT(fitZoomToWindow()));
 }
 
-void OrkaMainWindow::setImageProvider(ImageProvider * provider) {
-    image_display_gl_widget_->setImageProvider(provider);
+void OrkaMainWindow::set_image_provider(ImageProvider * provider) {
+    image_display_gl_widget_->set_image_provider(provider);
     QObject::connect(provider, SIGNAL(displayImage(OrkaImage *, int)),
             image_display_gl_widget_, SLOT(displayImage(OrkaImage *, int)));
 
-    control_bar_->setImageProvider(provider);
+    control_bar_->set_image_provider(provider);
     QObject::connect(provider, SIGNAL(displayImage(OrkaImage *, int)),
             control_bar_, SLOT(displayImage(OrkaImage *, int)));
 

@@ -7,13 +7,13 @@
 
 #include "ControlBar.h"
 
-#include <iostream>
-
 #include <QLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QIcon>
+
+#include <utility>
 
 #include "ImageProvider.h"
 
@@ -32,13 +32,8 @@ ControlBar::ControlBar(QWidget * parent) :
     stop_button_->setFlat(true);
     start_button_->setFlat(true);
     last_frame_button_->setFlat(true);
-//    first_frame_button_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-//    stop_button_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-//    start_button_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-//    last_frame_button_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
 
     frame_slider_ = new QSlider(Qt::Horizontal);
-//    frame_slider_->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Minimum);
 
     layout->addWidget(first_frame_button_);
     layout->addWidget(stop_button_);
@@ -56,21 +51,30 @@ ControlBar::ControlBar(QWidget * parent) :
 }
 
 ControlBar::~ControlBar() {
-    // TODO Auto-generated destructor stub
+    delete first_frame_button_;
+    delete stop_button_;
+    delete start_button_;
+    delete last_frame_button_;
+    delete frame_slider_;
 }
 
-void ControlBar::setImageProvider(ImageProvider * provider) {
+void ControlBar::set_image_provider(ImageProvider * provider) {
     image_provider_ = provider;
     std::pair<int, int> framerange = image_provider_->getFramerange();
     frame_slider_->setMinimum(framerange.first);
     frame_slider_->setMaximum(framerange.second);
     frame_slider_->setSliderPosition(framerange.first);
 
-    QObject::connect(frame_slider_, SIGNAL(sliderMoved(int)), this, SLOT(frameChanged(int)));
-    QObject::connect(stop_button_, SIGNAL(clicked(bool)), image_provider_, SLOT(stop()));
-    QObject::connect(start_button_, SIGNAL(clicked(bool)), image_provider_, SLOT(start()));
-    QObject::connect(first_frame_button_, SIGNAL(clicked(bool)), this, SLOT(gotoFirstFrame()));
-    QObject::connect(last_frame_button_, SIGNAL(clicked(bool)), this, SLOT(gotoLastFrame()));
+    QObject::connect(frame_slider_, SIGNAL(sliderMoved(int)), this,
+            SLOT(frameChanged(int)));
+    QObject::connect(stop_button_, SIGNAL(clicked(bool)), image_provider_,
+            SLOT(stop()));
+    QObject::connect(start_button_, SIGNAL(clicked(bool)), image_provider_,
+            SLOT(start()));
+    QObject::connect(first_frame_button_, SIGNAL(clicked(bool)), this,
+            SLOT(gotoFirstFrame()));
+    QObject::connect(last_frame_button_, SIGNAL(clicked(bool)), this,
+            SLOT(gotoLastFrame()));
 }
 
 void ControlBar::displayImage(OrkaImage * image, int frame) {
