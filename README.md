@@ -15,6 +15,7 @@ Feature highlights:
 
 TODO
 ====
+- [ ] Migrate the ImageSequenceProvider class to use the ImageCache class from oiio.
 - [ ] Bugfixes related to the time-slider.
 - [ ] Create settings window for gamma control, exposure, LUT and any other image settings we can think of.
 - [ ] Be able to control size of image cache. Currently at 200 MB.
@@ -45,11 +46,9 @@ Currently these are the dependencies:
 - Qt5
 
 They can be installed on a debian-like system by running
-apt-get install libopenimageio-dev libvlc-dev
+apt-get install libopenimageio-dev libopencolorio-dev libvlc-dev
 and
 doing a google search on how to install qt5.
-
-In the future opencolorio might become a dependency. 
 
 Style
 ====
