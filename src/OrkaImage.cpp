@@ -16,7 +16,7 @@
 namespace orka {
 
 OrkaImage::OrkaImage(std::string filename) :
-        mPixels(NULL), mFilename(filename), loaded_(false),
+        pixel_data_(NULL), filename_(filename), loaded_(false),
         height_(0), width_(0), channels_(0){
     load_mutex_ = new QMutex();
 }
@@ -26,7 +26,7 @@ OrkaImage::OrkaImage(int width, int height, int channels) :
     // Used by VLCMovieProvider. Hard-coded to UCHAR format for now.
     load_mutex_ = new QMutex();
     format_ = OpenImageIO::TypeDesc::UCHAR;
-    mPixels = (void *) malloc(
+    pixel_data_ = (void *) malloc(
             width_ * height_ * channels_ * sizeof(format_.elementsize()));
 }
 
@@ -35,12 +35,12 @@ OrkaImage::OrkaImage(const OrkaImage & other) {
     width_ = other.width_;
     height_ = other.height_;
     channels_ = other.channels_;
-    mFilename = other.mFilename;
+    filename_ = other.filename_;
     loaded_ = other.loaded_;
     if (loaded_) {
-        mPixels = (void *) malloc(
+        pixel_data_ = (void *) malloc(
                 width_ * height_ * channels_ * other.format_.elementsize());
-        memcpy(mPixels, other.mPixels,
+        memcpy(pixel_data_, other.pixel_data_,
                 width_ * height_ * channels_ * other.format_.elementsize());
     }
 }
@@ -48,7 +48,7 @@ OrkaImage::OrkaImage(const OrkaImage & other) {
 OrkaImage::~OrkaImage() {
     QMutexLocker locker(load_mutex_);
     if (loaded_) {
-        free(mPixels);
+        free(pixel_data_);
     }
     locker.unlock();
 }
@@ -62,10 +62,10 @@ void OrkaImage::loadImage() {
     }
 //    clock_t start = clock();
     OpenImageIO::ImageInput * open_image_ = OpenImageIO::ImageInput::open(
-            mFilename);
+            filename_);
     if (!open_image_) {
         throw OrkaException(
-                std::string("Unable to open image: ") + mFilename + "\nError: "
+                std::string("Unable to open image: ") + filename_ + "\nError: "
                         + OpenImageIO::geterror());
     }
     const OpenImageIO::ImageSpec &spec = open_image_->spec();
@@ -83,9 +83,9 @@ void OrkaImage::loadImage() {
         image_gamma_ = 1.0;
     }
 
-    mPixels = (void *) malloc(
+    pixel_data_ = (void *) malloc(
             width_ * height_ * channels_ * format_.elementsize());
-    open_image_->read_image(format_, mPixels);
+    open_image_->read_image(format_, pixel_data_);
     open_image_->close();
     delete open_image_;
 
@@ -110,7 +110,7 @@ void * OrkaImage::getPixels() {
     bool loaded = loaded_;
     locker.unlock();
     if (loaded) {
-        return mPixels;
+        return pixel_data_;
     } else {
         return NULL;
     }
@@ -119,7 +119,7 @@ void * OrkaImage::getPixels() {
 void OrkaImage::freePixels() {
     QMutexLocker locker(load_mutex_);
     if (loaded_) {
-        free(mPixels);
+        free(pixel_data_);
         loaded_ = false;
     }
     locker.unlock();

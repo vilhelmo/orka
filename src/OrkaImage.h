@@ -39,25 +39,25 @@ class OrkaImage {
         if (loaded) {
             switch (format_.basetype) {
             case OpenImageIO::TypeDesc::UCHAR:
-                return static_cast<float>(static_cast<uchar *>(mPixels)[(y
+                return static_cast<float>(static_cast<uchar *>(pixel_data_)[(y
                         * width_ + x) * channels_ + c]) / 255.0;
             case OpenImageIO::TypeDesc::CHAR:
-                return static_cast<float>(static_cast<char *>(mPixels)[(y
+                return static_cast<float>(static_cast<char *>(pixel_data_)[(y
                         * width_ + x) * channels_ + c]) / 255.0;
             case OpenImageIO::TypeDesc::USHORT:
-                return static_cast<float>(static_cast<ushort *>(mPixels)[(y
+                return static_cast<float>(static_cast<ushort *>(pixel_data_)[(y
                         * width_ + x) * channels_ + c]) / 255.0;
             case OpenImageIO::TypeDesc::SHORT:
-                return static_cast<float>(static_cast<short *>(mPixels)[(y
+                return static_cast<float>(static_cast<short *>(pixel_data_)[(y
                         * width_ + x) * channels_ + c]) / 255.0;
             case OpenImageIO::TypeDesc::UINT:
-                return static_cast<float>(static_cast<uint *>(mPixels)[(y
+                return static_cast<float>(static_cast<uint *>(pixel_data_)[(y
                         * width_ + x) * channels_ + c]) / 255.0;
             case OpenImageIO::TypeDesc::INT:
-                return static_cast<float>(static_cast<int *>(mPixels)[(y
+                return static_cast<float>(static_cast<int *>(pixel_data_)[(y
                         * width_ + x) * channels_ + c]) / 255.0;
             case OpenImageIO::TypeDesc::FLOAT:
-                return static_cast<float *>(mPixels)[(y * width_ + x)
+                return static_cast<float *>(pixel_data_)[(y * width_ + x)
                         * channels_ + c];
             default:
                 return 0.f;
@@ -75,8 +75,8 @@ class OrkaImage {
     }
 
     // blind pointer to data.
-    void * mPixels;
-    std::string mFilename;
+    void * pixel_data_;
+    std::string filename_;
 
  private:
     QMutex * load_mutex_;
