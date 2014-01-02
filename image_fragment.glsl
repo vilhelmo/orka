@@ -4,8 +4,6 @@ uniform sampler2D imageSampler;
 
 uniform mediump mat4 matrix;
 uniform highp float exposure;
-uniform highp float img_gamma;
-uniform highp float gamma;
 
 varying highp vec4 f_pos;
 varying highp vec4 f_uv;

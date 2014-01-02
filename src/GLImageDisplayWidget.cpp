@@ -192,22 +192,6 @@ void GLImageDisplayWidget::initializeGL() {
     image_texture_uniform_ = image_program_.uniformLocation("imageSampler");
     image_lutSampler_uniform_ = image_program_.uniformLocation("lutSampler");
     image_exposure_uniform_ = image_program_.uniformLocation("exposure");
-    image_image_gamma_uniform_ = image_program_.uniformLocation("img_gamma");
-    image_gamma_uniform_ = image_program_.uniformLocation("gamma");
-
-    default_program_.removeAllShaders();
-    default_program_.addShaderFromSourceFile(QOpenGLShader::Vertex,
-            QString("default_vertex.glsl"));
-    default_program_.addShaderFromSourceFile(QOpenGLShader::Fragment,
-            QString("default_fragment.glsl"));
-    default_program_.link();
-
-    default_vertex_attr_ = default_program_.attributeLocation("vertex");
-    default_color_uniform_ = default_program_.uniformLocation("color");
-    default_matrix_uniform_ = default_program_.uniformLocation("matrix");
-    default_exposure_uniform_ = default_program_.uniformLocation("exposure");
-    default_image_gamma_uniform_ = default_program_.uniformLocation("img_gamma");
-    default_gamma_uniform_ = default_program_.uniformLocation("gamma");
 }
 
 void GLImageDisplayWidget::mousePressEvent(QMouseEvent * event) {
@@ -269,35 +253,8 @@ void GLImageDisplayWidget::paintGL() {
 
     loadImage();
 
-    float height = this->height();
-    float width = this->width();
-
-    float max = mImageWidth > mImageHeight ? mImageWidth : mImageHeight;
-
-    // -1 <= x,y <= 1
-    float half_width = width/2.f;
-    float half_height = height/2.f;
     QMatrix4x4 modelview;
-    modelview.ortho(-half_width, half_width, // left, right
-            half_height, -half_height, // bottom, top
-            0, 1);
-    modelview.scale(view_settings_->zoom());
-
-//    // adjust to aspect ratio of image.
-//    modelview.scale(1.0 / max, 1.0 / max);
-//    // Scale image to pixels on screen.
-//    modelview.scale(float(mImageWidth) / width);
-//    // adjust aspect ratio of window.
-//    modelview.scale(1.0, width / height);
-//    modelview.scale(view_settings_->zoom());
-//    modelview.translate(2.0 * view_settings_->tx(),
-//            -2.0 * view_settings_->ty());
-
-    image_program_.bind();
-    image_program_.setUniformValue(image_matrix_uniform_, modelview);
-
-    paintImage();
-    image_program_.release();
+    paintImage(modelview);
 
     // Paint other native ui elements.
     paintColorPicker(painter, modelview);
@@ -322,12 +279,67 @@ void GLImageDisplayWidget::paintGL() {
     frames++;
 }
 
-void GLImageDisplayWidget::paintImage() {
+void GLImageDisplayWidget::doPaint(const float * vertices,
+        const float * texture_coords, const QMatrix4x4 & transform) {
     glActiveTexture(GL_TEXTURE0 + 0);
     glBindTexture(GL_TEXTURE_3D, gl_texture_ids_[LUT_TEX_INDEX]);
 
     glActiveTexture(GL_TEXTURE0 + 1);
     glBindTexture(GL_TEXTURE_2D, gl_texture_ids_[IMAGE_TEX_INDEX]);
+
+    image_program_.bind();
+
+    image_program_.setUniformValue(image_lutSampler_uniform_, LUT_TEX_INDEX);
+    image_program_.setUniformValue(image_texture_uniform_, IMAGE_TEX_INDEX);
+    image_program_.setUniformValue(image_matrix_uniform_, transform);
+    image_program_.setUniformValue(image_exposure_uniform_, view_settings_->exposure());
+    image_program_.enableAttributeArray(image_vertex_attr_);
+    image_program_.setAttributeArray(image_vertex_attr_, vertices, 2);
+    image_program_.enableAttributeArray(image_tex_coord_attr_);
+    image_program_.setAttributeArray(image_tex_coord_attr_, texture_coords, 2);
+
+    glDrawArrays(GL_QUADS, 0, 4);
+
+    image_program_.disableAttributeArray(image_vertex_attr_);
+    image_program_.disableAttributeArray(image_tex_coord_attr_);
+
+    image_program_.release();
+
+    glActiveTexture(GL_TEXTURE0 + IMAGE_TEX_INDEX);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE0 + LUT_TEX_INDEX);
+    glBindTexture(GL_TEXTURE_3D, 0);
+}
+
+void GLImageDisplayWidget::paintImage(QMatrix4x4 & modelview) {
+
+    float window_width = this->width();
+    float window_height = this->height();
+
+//    float max = mImageWidth > mImageHeight ? mImageWidth : mImageHeight;
+
+    // -1 <= x,y <= 1
+    float half_window_width = window_width/2.f;
+    float half_window_height = window_height/2.f;
+    modelview.setToIdentity();
+    modelview.ortho(-half_window_width, half_window_width, // left, right
+            half_window_height, -half_window_height, // bottom, top
+            0, 1);
+    modelview.scale(view_settings_->zoom());
+
+//    // adjust to aspect ratio of image.
+//    modelview.scale(1.0 / max, 1.0 / max);
+//    // Scale image to pixels on screen.
+//    modelview.scale(float(mImageWidth) / width);
+//    // adjust aspect ratio of window.
+//    modelview.scale(1.0, width / height);
+//    modelview.scale(view_settings_->zoom());
+//    modelview.translate(2.0 * view_settings_->tx(),
+//            -2.0 * view_settings_->ty());
+
+    if (!mCurrentImage) {
+        return;
+    }
 
     float half_width = float(mImageWidth)/2.0;
     float half_height = float(mImageHeight)/2.0;
@@ -342,26 +354,7 @@ void GLImageDisplayWidget::paintImage() {
             1.f, 0.f, //
             0.f, 0.f };
 
-    image_program_.setUniformValue(image_exposure_uniform_, view_settings_->exposure());
-    image_program_.setUniformValue(image_image_gamma_uniform_, mCurrentImage->image_gamma());
-    image_program_.setUniformValue(image_gamma_uniform_, view_settings_->gamma());
-    image_program_.enableAttributeArray(image_vertex_attr_);
-    image_program_.setAttributeArray(image_vertex_attr_, vertices, 2);
-    image_program_.enableAttributeArray(image_tex_coord_attr_);
-    image_program_.setAttributeArray(image_tex_coord_attr_, textureCoords, 2);
-
-    image_program_.setUniformValue(image_texture_uniform_, IMAGE_TEX_INDEX);
-    image_program_.setUniformValue(image_lutSampler_uniform_, LUT_TEX_INDEX);
-
-    glDrawArrays(GL_QUADS, 0, 4);
-
-    image_program_.disableAttributeArray(image_vertex_attr_);
-    image_program_.disableAttributeArray(image_tex_coord_attr_);
-
-    glActiveTexture(GL_TEXTURE0 + IMAGE_TEX_INDEX);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glActiveTexture(GL_TEXTURE0 + LUT_TEX_INDEX);
-    glBindTexture(GL_TEXTURE_3D, 0);
+    doPaint(vertices, textureCoords, modelview);
 }
 
 void GLImageDisplayWidget::paintColorPicker(QPainter & painter, QMatrix4x4 & image_transform) {
@@ -403,26 +396,16 @@ void GLImageDisplayWidget::paintColorPicker(QPainter & painter, QMatrix4x4 & ima
         }
     }
 
+    float tex_coord_x = x / static_cast<float>(mImageWidth);
+    float tex_coord_y = y / static_cast<float>(mImageHeight);
+    float color_picker_tex_coords[8] = { tex_coord_x, 1.f - tex_coord_y,
+            tex_coord_x, 1.f - tex_coord_y, tex_coord_x, 1.f - tex_coord_y,
+            tex_coord_x, 1.f - tex_coord_y };
 
-    default_program_.bind();
     QMatrix4x4 ortho_matrix;
     ortho_matrix.ortho(this->rect());
-    default_program_.setUniformValue(default_matrix_uniform_, ortho_matrix);
 
-    default_program_.setUniformValue(default_exposure_uniform_, view_settings_->exposure());
-    default_program_.setUniformValue(default_image_gamma_uniform_, mCurrentImage->image_gamma());
-    default_program_.setUniformValue(default_gamma_uniform_, view_settings_->gamma());
-
-    default_program_.setUniformValue(default_color_uniform_, pixel_color[0],
-            pixel_color[1], pixel_color[2], pixel_color[3]);
-
-    default_program_.enableAttributeArray(default_vertex_attr_);
-    default_program_.setAttributeArray(default_vertex_attr_, color_picker_screen_coords, 2);
-
-    glDrawArrays(GL_QUADS, 0, 4);
-
-    default_program_.disableAttributeArray(default_vertex_attr_);
-    default_program_.release();
+    doPaint(color_picker_screen_coords, color_picker_tex_coords, ortho_matrix);
 
     painter.setPen(Qt::white);
     painter.drawText(30, starty, ss.str().c_str());

@@ -2,8 +2,6 @@
 <qresource>
     <file>../image_vertex.glsl</file>
     <file>../image_fragment.glsl</file>
-    <file>../default_vertex.glsl</file>
-    <file>../default_fragment.glsl</file>
     
     <file>../media-skip-backward.png</file>
     <file>../media-playback-stop.png</file>
