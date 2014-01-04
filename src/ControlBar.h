@@ -32,8 +32,10 @@ class ControlBar: public QWidget {
     }
 
  public slots:
+    void sliderPressed();
+    void sliderReleased();
     void set_image_provider(ImageProvider * provider);
-    void displayImage(OrkaImage * image, int frame);
+    void displayImage(OrkaImage * image, int frame, bool freeOldImageData);
     void gotoFirstFrame();
     void gotoLastFrame();
     void frameChanged(int frame);
@@ -44,6 +46,8 @@ class ControlBar: public QWidget {
     QPushButton * start_button_;
     QPushButton * last_frame_button_;
     QSlider * frame_slider_;
+
+    bool slider_moving_;
 
     ImageProvider * image_provider_;
 };

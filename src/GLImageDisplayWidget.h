@@ -37,7 +37,7 @@ Q_OBJECT
     void set_image_provider(ImageProvider * provider);
 
  protected slots:
-    void displayImage(OrkaImage * image, int frame);
+    void displayImage(OrkaImage * image, int frame, bool freeOldImageData);
     void fitZoomToWindow();
 
  protected:
@@ -51,8 +51,8 @@ Q_OBJECT
 
  private:
     void paintGL();
-    void doPaint(const float * vertices,
-            const float * texture_coords, const QMatrix4x4 & transform);
+    void doPaint(const float * vertices, const float * texture_coords,
+            GLsizei count, const QMatrix4x4 & transform);
     void paintImage(QMatrix4x4 * modelview);
     void paintColorPicker(QPainter * painter, const QMatrix4x4 & image_transform);
 

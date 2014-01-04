@@ -14,13 +14,14 @@
 #include <QIcon>
 
 #include <utility>
+#include <iostream>
 
 #include "ImageProvider.h"
 
 namespace orka {
 
 ControlBar::ControlBar(QWidget * parent) :
-        QWidget(parent), image_provider_(NULL) {
+        QWidget(parent), image_provider_(NULL), slider_moving_(false) {
     QHBoxLayout * layout = new QHBoxLayout(this);
     this->setLayout(layout);
 
@@ -58,6 +59,14 @@ ControlBar::~ControlBar() {
     delete frame_slider_;
 }
 
+void ControlBar::sliderPressed() {
+    slider_moving_ = true;
+}
+
+void ControlBar::sliderReleased() {
+    slider_moving_ = false;
+}
+
 void ControlBar::set_image_provider(ImageProvider * provider) {
     image_provider_ = provider;
     std::pair<int, int> framerange = image_provider_->getFramerange();
@@ -67,6 +76,10 @@ void ControlBar::set_image_provider(ImageProvider * provider) {
 
     QObject::connect(frame_slider_, SIGNAL(sliderMoved(int)), this,
             SLOT(frameChanged(int)));
+    QObject::connect(frame_slider_, SIGNAL(sliderPressed()), this,
+            SLOT(sliderPressed()));
+    QObject::connect(frame_slider_, SIGNAL(sliderReleased()), this,
+            SLOT(sliderReleased()));
     QObject::connect(stop_button_, SIGNAL(clicked(bool)), image_provider_,
             SLOT(stop()));
     QObject::connect(start_button_, SIGNAL(clicked(bool)), image_provider_,
@@ -77,8 +90,10 @@ void ControlBar::set_image_provider(ImageProvider * provider) {
             SLOT(gotoLastFrame()));
 }
 
-void ControlBar::displayImage(OrkaImage * image, int frame) {
-    frame_slider_->setSliderPosition(frame);
+void ControlBar::displayImage(OrkaImage * image, int frame, bool freeOldImageData) {
+    if (!slider_moving_) {
+        frame_slider_->setSliderPosition(frame);
+    }
 }
 
 void ControlBar::gotoFirstFrame() {

@@ -75,19 +75,11 @@ void ImageCacheProvider::gotoFrame(int frame) {
 }
 
 void ImageCacheProvider::displayNextImage() {
-//    OrkaImage * image = mImageCache.at(mFileIndex);
-//    if (!image->isLoaded()) {
-//        image->loadImage();
-////        return; // safeguard
-//    }
-//
-//    emit displayImage(image, file_index_);
-//    image_cache_->
     OrkaImage * image = new OrkaImage(image_cache_, filenames_[file_index_]);
 
-    emit displayImage(image, file_index_+1);
+    emit displayImage(image, file_index_+1, true);
 
-    delete image;
+//    delete image;
 
     file_index_ = (file_index_ + 1) % num_files_;
 }

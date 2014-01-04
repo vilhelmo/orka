@@ -138,21 +138,18 @@ void VLCMovieProvider::gotoFrame(int frame) {
 void VLCMovieProvider::display(void *id) {
     for (uint i = 0; i < height_ * width_; i += 1) {
         // TODO: Figure out a better way to support both LDR and HDR videos.
-        // the 95% usecase will prob be LDR.
+        // the 95% usecase will prob be LDR though.
         vlc_int data = frameData_[i];
         int mask = (1 << 8) - 1;
         int b = (data >> 0) & mask;
         int g = (data >> 8) & mask;
         int r = (data >> 16) & mask;
-//		int a = (data >> 24) & mask;
+//		int a = (data >> 24) & mask; // No alpha support in videos right now.
         ((uchar*) currentFrame_->pixel_data_)[i * channels_ + 0] = r;
         ((uchar*) currentFrame_->pixel_data_)[i * channels_ + 1] = g;
         ((uchar*) currentFrame_->pixel_data_)[i * channels_ + 2] = b;
-//		currentFrame_->mPixels[i * channels_] = r / 256.0;
-//		currentFrame_->mPixels[i * channels_ + 1] = g / 256.0;
-//		currentFrame_->mPixels[i * channels_ + 2] = b / 256.0;
     }
-    emit displayImage(currentFrame_, 1);
+    emit displayImage(currentFrame_, 1, false);
 }
 
 void VLCMovieProvider::lock(void ** p_pixels) {

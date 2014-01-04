@@ -58,7 +58,10 @@ void GLImageDisplayWidget::set_image_provider(ImageProvider * provider) {
     image_provider_ = provider;
 }
 
-void GLImageDisplayWidget::displayImage(OrkaImage * image, int frame) {
+void GLImageDisplayWidget::displayImage(OrkaImage * image, int frame, bool freeOldImageData) {
+    if (freeOldImageData && current_image_) {
+        current_image_->freePixels(); // Free memory from previous image.
+    }
     current_image_ = image;
     image_transferred_ = false;
     loadImage();
@@ -86,7 +89,6 @@ void GLImageDisplayWidget::loadImage() {
 
     GLenum formats[] = { 0, GL_RED, GL_RG, GL_RGB, GL_RGBA };
     glActiveTexture(GL_TEXTURE0 + IMAGE_TEX_INDEX);
-    glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, gl_texture_ids_[IMAGE_TEX_INDEX]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, current_image_->width(),
             current_image_->height(), 0, formats[current_image_->channels()],
@@ -114,6 +116,7 @@ void GLImageDisplayWidget::initializeGL() {
 
     QString image_fragment_shader_text = readFile("image_fragment.glsl");
     try {
+        // TODO(vilhelm): Figure out a better/more robust mapping. Make it configurable?
         const std::map<std::string, std::string> colorSpaceMapping = {
                 {"Linear", "scene_linear" },
                 { "GammaCorrected", "reference" },
@@ -128,8 +131,9 @@ void GLImageDisplayWidget::initializeGL() {
         if (color_space_role_iterator != colorSpaceMapping.end()) {
             ocio_role = color_space_role_iterator->second;
         }
+
         std::cout << "Color space: " << image_provider_->getColorSpace()
-                << " role: " << ocio_role << std::endl;
+                << " OpenColorIO role: " << ocio_role << std::endl;
 
         OCIO::ConstConfigRcPtr config = OCIO::GetCurrentConfig();
         // If the user hasn't picked a display, use the defaults...
@@ -248,6 +252,8 @@ void GLImageDisplayWidget::paintGL() {
 
     painter.beginNativePainting();
 
+//    loadImage();
+
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -281,11 +287,12 @@ void GLImageDisplayWidget::paintGL() {
 }
 
 void GLImageDisplayWidget::doPaint(const float * vertices,
-        const float * texture_coords, const QMatrix4x4 & transform) {
-    glActiveTexture(GL_TEXTURE0 + 0);
+        const float * texture_coords, GLsizei count,
+        const QMatrix4x4 & transform) {
+    glActiveTexture(GL_TEXTURE0 + LUT_TEX_INDEX);
     glBindTexture(GL_TEXTURE_3D, gl_texture_ids_[LUT_TEX_INDEX]);
 
-    glActiveTexture(GL_TEXTURE0 + 1);
+    glActiveTexture(GL_TEXTURE0 + IMAGE_TEX_INDEX);
     glBindTexture(GL_TEXTURE_2D, gl_texture_ids_[IMAGE_TEX_INDEX]);
 
     image_program_.bind();
@@ -300,7 +307,7 @@ void GLImageDisplayWidget::doPaint(const float * vertices,
     image_program_.enableAttributeArray(image_tex_coord_attr_);
     image_program_.setAttributeArray(image_tex_coord_attr_, texture_coords, 2);
 
-    glDrawArrays(GL_QUADS, 0, 4);
+    glDrawArrays(GL_QUADS, 0, count);
 
     image_program_.disableAttributeArray(image_vertex_attr_);
     image_program_.disableAttributeArray(image_tex_coord_attr_);
@@ -355,7 +362,7 @@ void GLImageDisplayWidget::paintImage(QMatrix4x4 * modelview) {
             1.f, 0.f,  //
             0.f, 0.f };
 
-    doPaint(vertices, textureCoords, *modelview);
+    doPaint(vertices, textureCoords, 4, *modelview);
 }
 
 void GLImageDisplayWidget::paintColorPicker(QPainter * painter,
@@ -403,7 +410,7 @@ void GLImageDisplayWidget::paintColorPicker(QPainter * painter,
     QMatrix4x4 ortho_matrix;
     ortho_matrix.ortho(this->rect());
 
-    doPaint(color_picker_screen_coords, color_picker_tex_coords, ortho_matrix);
+    doPaint(color_picker_screen_coords, color_picker_tex_coords, 4, ortho_matrix);
 
     painter->setPen(Qt::white);
     painter->drawText(30, starty, ss.str().c_str());

@@ -76,12 +76,12 @@ OrkaMainWindow::OrkaMainWindow(OrkaViewSettings * view_settings) {
 
 void OrkaMainWindow::set_image_provider(ImageProvider * provider) {
     image_display_gl_widget_->set_image_provider(provider);
-    QObject::connect(provider, SIGNAL(displayImage(OrkaImage *, int)),
-            image_display_gl_widget_, SLOT(displayImage(OrkaImage *, int)));
+    QObject::connect(provider, SIGNAL(displayImage(OrkaImage *, int, bool)),
+            image_display_gl_widget_, SLOT(displayImage(OrkaImage *, int, bool)));
 
     control_bar_->set_image_provider(provider);
-    QObject::connect(provider, SIGNAL(displayImage(OrkaImage *, int)),
-            control_bar_, SLOT(displayImage(OrkaImage *, int)));
+    QObject::connect(provider, SIGNAL(displayImage(OrkaImage *, int, bool)),
+            control_bar_, SLOT(displayImage(OrkaImage *, int, bool)));
 
     image_display_gl_widget_->start();
 }

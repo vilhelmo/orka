@@ -62,14 +62,14 @@ void ImageSequenceProvider::cacheLoadNewClearOld() {
     if (mCacheSizeNumImages > mNumFiles) {
         return;
     }
-    // Not all images fit in cache. Free one and load a new one up.
-    // Free last image displayed.
-    if (mPrevFileIndex >= 0) {
-        OrkaImage * image = mImageCache.at(mPrevFileIndex);
-        if (image->isLoaded()) {
-            image->freePixels();
-        }
-    }
+//    // Not all images fit in cache. Free one and load a new one up.
+//    // Free last image displayed.
+//    if (mPrevFileIndex >= 0) {
+//        OrkaImage * image = mImageCache.at(mPrevFileIndex);
+//        if (image->isLoaded()) {
+//            image->freePixels();
+//        }
+//    }
 
     if (mLoadIndex != (mFileIndex + mCacheSizeNumImages - 1) % mNumFiles) {
         // Recache.
@@ -118,7 +118,7 @@ void ImageSequenceProvider::jog(int dframes) {
 }
 
 void ImageSequenceProvider::gotoFrame(int frame) {
-    mPrevFileIndex = mFileIndex;
+//    mPrevFileIndex = mFileIndex;
     mFileIndex = (frame - 1) % mNumFiles;
 
     this->cacheLoadNewClearOld();
@@ -135,11 +135,11 @@ void ImageSequenceProvider::displayNextImage() {
 //        return; // safeguard
     }
 
-    emit displayImage(image, mFileIndex+1);
+    emit displayImage(image, mFileIndex+1, true); //false);
 
     this->cacheLoadNewClearOld();
 
-    mPrevFileIndex = mFileIndex;
+//    mPrevFileIndex = mFileIndex;
     mFileIndex = (mFileIndex + 1) % mNumFiles;
 }
 

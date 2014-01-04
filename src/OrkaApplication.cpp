@@ -27,8 +27,7 @@ public:
 		}
 		OpenImageIO::ImageInput * first_input = OpenImageIO::ImageInput::create(files.at(0));
 		if (files.size() > 1 || first_input != NULL) {
-		    return new ImageCacheProvider(files);
-//			return new ImageSequenceProvider(files);
+			return new ImageSequenceProvider(files);
 		} else if (files.size() == 1) {
 			return new VLCMovieProvider(files.at(0));
 		} else {

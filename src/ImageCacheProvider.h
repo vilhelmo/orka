@@ -23,6 +23,12 @@ namespace orka {
 
 class OrkaImage;
 
+/*
+ * This class is currently not used, because the speed of loading is slower due to the fact
+ * that it's only loading a single image at a time in a single threaded fashion. See
+ * ImageSequenceProvider for the class currently used.
+ */
+
 class ImageCacheProvider: public ImageProvider {
 Q_OBJECT
 

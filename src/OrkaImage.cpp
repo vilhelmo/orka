@@ -48,15 +48,15 @@ OrkaImage::OrkaImage(OpenImageIO::ImageCache * cache, std::string filename) :
 
     pixel_data_ = (void *) malloc(
             width_ * height_ * channels_ * format_.elementsize());
-    cache->get_pixels(OpenImageIO::ustring(filename_), 0, 0, 0, width_, 0, height_, 0, 0, format_, pixel_data_);
-//    cache->get_pixels ("file1.jpg", 0, 0, xbegin, xend, ybegin, yend,
-//    zbegin, zend, TypeDesc::FLOAT, pixels);
-//    open_image_->read_image(format_, pixel_data_);
-//    open_image_->close();
-//    delete open_image_;
+
+    ok = cache->get_pixels(OpenImageIO::ustring(filename_), 0, 0, 0, width_, 0, height_, 0, 1, format_, pixel_data_);
+    if (!ok) {
+        throw OrkaException(
+                        std::string("Unable to read image: ") + filename_ + "\nError: "
+                                + OpenImageIO::geterror());
+    }
 
     loaded_ = true;
-//    locker.unlock();
 }
 
 OrkaImage::OrkaImage(int width, int height, int channels) :

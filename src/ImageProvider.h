@@ -35,7 +35,7 @@ Q_OBJECT
     virtual void gotoFrame(int frame) = 0;
 
  signals:
-    void displayImage(OrkaImage * image, int frame);
+    void displayImage(OrkaImage * image, int frame, bool freeOldImageData);
 };
 
 }  // end namespace orka
