@@ -15,6 +15,7 @@ Feature highlights:
 
 TODO
 ====
+- [ ] Add full-screen support
 - [ ] Support viewing AOV-channels in images.
 - [ ] Support audio output from videos through libvlc
 - [ ] Create settings window for gamma control, exposure, LUT, OpenColorIO settings and any other image settings we can think of.
