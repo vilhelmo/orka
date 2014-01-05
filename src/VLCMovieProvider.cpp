@@ -33,15 +33,25 @@ static void vlc_unlock(void *data, void *id, void * const *p_pixels) {
     provider->unlock(id, p_pixels);
 }
 
+// typedef void( * libvlc_callback_t)(const struct libvlc_event_t *, void *)
+static void vlc_media_duration_changed(const struct libvlc_event_t * event, void * data) {
+    VLCMovieProvider * provider = (VLCMovieProvider *) data;
+    provider->setDuration(event->u.media_duration_changed.new_duration);
+}
+
 VLCMovieProvider::VLCMovieProvider(const std::string & filename) :
         ImageProvider(), filename_(filename) {
-    char const *vlc_argv[] = { "--no-audio", /* skip any audio track */
-    "--no-xlib", /* tell VLC to not use Xlib */
-            "--verbose=2", // Be much more verbose then normal for debugging purpose
-            "--extraintf=logger", // Log anything
-            "--ignore-config", // Don't use VLC's config
-            "-v", "-I", "dummy", "--no-media-library", "--vout=dummy",
-            "--aout=dummy" };
+    char const *vlc_argv[] = {
+            "--no-xlib", // Don't use Xlib
+            "--no-skip-frames", //Disables framedropping on MPEG2 stream.
+            "--text-renderer", "dummy", // Text rendering module
+            "--vout", "dummy", // This is the the video output method used by VLC.
+            "--no-video-title-show", // Don't display the filename
+            "--no-stats", // Don't display stats
+            "--no-sub-autodetect-file", // Don't detect subtitles
+            "--no-disable-screensaver", //No need to disable the screensaver, and save a thread.
+            };
+
     int vlc_argc = sizeof(vlc_argv) / sizeof(*vlc_argv);
 
     // We launch VLC
@@ -51,30 +61,28 @@ VLCMovieProvider::VLCMovieProvider(const std::string & filename) :
     vlc_media_player_ = libvlc_media_player_new_from_media(vlc_media_);
     libvlc_media_release(vlc_media_);
 
-    //====
-    // Start the video stream for a little bit to get the format, then stop it.
-    // https://forum.videolan.org/viewtopic.php?f=32&t=84581
-    libvlc_media_player_play(vlc_media_player_);
-    unsigned int width, height = 0;
     max_time_ms_ = -1;
-    while (width <= 0 || height <= 0) {
-        libvlc_video_get_size(vlc_media_player_, 0, &width, &height);
-        if (max_time_ms_ <= 0) {
-            max_time_ms_ = libvlc_media_player_get_length(vlc_media_player_);
-        }
-    }
+
+    libvlc_event_manager_t * vlc_event_manager = libvlc_media_event_manager(vlc_media_);
+    libvlc_event_attach(vlc_event_manager, libvlc_MediaDurationChanged, vlc_media_duration_changed, this);
+    // Start and stop the video to trigger the MediaDurationChanged event, which sets max_time_ms_.
+    libvlc_media_player_play(vlc_media_player_);
     libvlc_media_player_stop(vlc_media_player_);
-    assert(width > 0 && height > 0);
-    //====
-    std::cout << "Movie length ms: " << max_time_ms_ << std::endl;
 
-    width_ = width;
-    height_ = height;
+    libvlc_video_get_size(vlc_media_player_, 0, &width_, &height_);
+    assert(width_ > 0 && height_ > 0);
+
     channels_ = 3;
-    fps_ = 24.0; // TODO: get fps
+    // TODO: get fps, but according to the internet, not all media has fps
+    // information available. Google 'libvlc_media_player_get_fps' for more info.
+    fps_ = 24.0;
 
+    // Allocate space for pixel data.
     frameData_ = (vlc_int *) malloc(width_ * height_ * sizeof(vlc_int));
     currentFrame_ = new OrkaImage(width_, height_, channels_);
+
+    // Setup the video callbacks -
+    // these are the ones that actually transfers and displays the images
     libvlc_video_set_callbacks(vlc_media_player_, vlc_lock, vlc_unlock,
             vlc_display, this);
     libvlc_video_set_format(vlc_media_player_, "RV32", width_, height_,
@@ -95,15 +103,7 @@ VLCMovieProvider::~VLCMovieProvider() {
 }
 
 std::pair<int, int> VLCMovieProvider::getFramerange() {
-    // TODO: Figure out how to reliably get fps and length.
-//    libvlc_time_t max_time_ms = libvlc_media_player_get_length(
-//            vlc_media_player_);
-    float fps = 24.0;
-//    float fps = libvlc_media_player_get_fps(vlc_media_player_);
-//    if (fps <= 0.f) {
-//        fps = libvlc_media_player_get_rate(vlc_media_player_);
-//    }
-    return std::make_pair(1, static_cast<float>(1000 * max_time_ms_) * fps);
+    return std::make_pair(1, fps_ * static_cast<float>(max_time_ms_) / 1000.f);
 }
 
 void VLCMovieProvider::start() {
@@ -112,7 +112,6 @@ void VLCMovieProvider::start() {
 
 void VLCMovieProvider::stop() {
     libvlc_media_player_pause(vlc_media_player_);
-//    libvlc_media_player_stop(vlc_media_player_);
 }
 
 void VLCMovieProvider::toggleStartStop() {
@@ -122,10 +121,8 @@ void VLCMovieProvider::toggleStartStop() {
 void VLCMovieProvider::jog(int dframes) {
     libvlc_time_t current_time_ms = libvlc_media_player_get_time(
             vlc_media_player_);
-    libvlc_time_t max_time_ms = libvlc_media_player_get_length(
-            vlc_media_player_);
     current_time_ms = std::max(
-            std::min(current_time_ms + 10 * dframes, max_time_ms),
+            std::min(current_time_ms + 10 * dframes, max_time_ms_),
             (libvlc_time_t) 0);
     libvlc_media_player_set_time(vlc_media_player_, current_time_ms);
 }
@@ -149,7 +146,11 @@ void VLCMovieProvider::display(void *id) {
         ((uchar*) currentFrame_->pixel_data_)[i * channels_ + 1] = g;
         ((uchar*) currentFrame_->pixel_data_)[i * channels_ + 2] = b;
     }
-    emit displayImage(currentFrame_, 1, false);
+    libvlc_time_t current_time_ms = libvlc_media_player_get_time(
+            vlc_media_player_);
+    int frame = fps_ * static_cast<float>(current_time_ms) / 1000.f;
+
+    emit displayImage(currentFrame_, frame, false);
 }
 
 void VLCMovieProvider::lock(void ** p_pixels) {
@@ -158,6 +159,10 @@ void VLCMovieProvider::lock(void ** p_pixels) {
 
 void VLCMovieProvider::unlock(void *id, void * const *p_pixels) {
     assert(id == NULL); /* picture identifier, not needed here */
+}
+
+void VLCMovieProvider::setDuration(int new_duration) {
+    max_time_ms_ = new_duration;
 }
 
 } /* namespace orka */

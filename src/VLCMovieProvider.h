@@ -32,6 +32,7 @@ public:
     void display(void *id);
     void lock(void ** p_pixels);
     void unlock(void *id, void * const *p_pixels);
+    void setDuration(int new_duration);
 private slots:
     void start();
     void stop();
@@ -45,7 +46,7 @@ private:
 
     std::string filename_;
     bool playing_;
-    int width_, height_, channels_;
+    unsigned int width_, height_, channels_;
     float fps_;
     libvlc_time_t max_time_ms_;
 
