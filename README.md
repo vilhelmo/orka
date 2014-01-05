@@ -15,16 +15,7 @@ Feature highlights:
 
 TODO
 ====
-- [ ] Add full-screen support
-- [ ] Support viewing AOV-channels in images.
-- [ ] Support audio output from videos through libvlc
-- [ ] Create settings window for gamma control, exposure, LUT, OpenColorIO settings and any other image settings we can think of.
-- [ ] Be able to control size of image cache. Currently at 200 MB.
-- [x] Bugfixes related to the time-slider.
-- [x] Migrate the ImageSequenceProvider class to use the ImageCache class from oiio. (Tried it and it didn't provide any real benefit at this point)
-- [x] Create commands to reset viewport to different sizes (1-to-1 pixel, adjust to screen size, double size, half size etc)
-- [x] Support opencolorio
-- [x] Create control bar widget at the bottom, play pause stop, time/frame-slider etc.
+See [Issues](https://github.com/vilhelmo/orka/issues) for the todo-list.
 
 Test Images
 ====
