@@ -6,18 +6,20 @@
  */
 
 #include "OrkaImage.h"
-#include "OrkaException.h"
 
+#include <QMutexLocker>
+
+#include <string>
 #include <thread>
 #include <chrono>
 
-#include <QMutexLocker>
+#include "OrkaException.h"
 
 namespace orka {
 
 OrkaImage::OrkaImage(std::string filename) :
-        pixel_data_(NULL), filename_(filename), loaded_(false),
-        height_(0), width_(0), channels_(0), image_gamma_(1.0) {
+        pixel_data_(NULL), filename_(filename), loaded_(false), height_(0), width_(
+                0), channels_(0), image_gamma_(1.0) {
     load_mutex_ = new QMutex();
 }
 
@@ -29,8 +31,8 @@ OrkaImage::OrkaImage(OpenImageIO::ImageCache * cache, std::string filename) :
     bool ok = cache->get_imagespec(OpenImageIO::ustring(filename_), spec);
     if (!ok) {
         throw OrkaException(
-                        std::string("Unable to open image: ") + filename_ + "\nError: "
-                                + OpenImageIO::geterror());
+                std::string("Unable to open image: ") + filename_ + "\nError: "
+                        + OpenImageIO::geterror());
     }
     width_ = spec.width;
     height_ = spec.height;
@@ -39,32 +41,34 @@ OrkaImage::OrkaImage(OpenImageIO::ImageCache * cache, std::string filename) :
     if (format_ == OpenImageIO::TypeDesc::HALF) {
         format_ = OpenImageIO::TypeDesc::FLOAT;
     }
-    color_space_ = spec.get_string_attribute("oiio:ColorSpace", "GammaCorrected");
+    color_space_ = spec.get_string_attribute("oiio:ColorSpace",
+            "GammaCorrected");
     if (color_space_ == "GammaCorrected") {
         image_gamma_ = spec.get_float_attribute("oiio:Gamma", 2.2);
     } else {
         image_gamma_ = 1.0;
     }
 
-    pixel_data_ = (void *) malloc(
-            width_ * height_ * channels_ * format_.elementsize());
+    pixel_data_ = malloc(width_ * height_ * channels_ * format_.elementsize());
 
-    ok = cache->get_pixels(OpenImageIO::ustring(filename_), 0, 0, 0, width_, 0, height_, 0, 1, format_, pixel_data_);
+    ok = cache->get_pixels(OpenImageIO::ustring(filename_), 0, 0, 0, width_, 0,
+            height_, 0, 1, format_, pixel_data_);
     if (!ok) {
         throw OrkaException(
-                        std::string("Unable to read image: ") + filename_ + "\nError: "
-                                + OpenImageIO::geterror());
+                std::string("Unable to read image: ") + filename_ + "\nError: "
+                        + OpenImageIO::geterror());
     }
 
     loaded_ = true;
 }
 
 OrkaImage::OrkaImage(int width, int height, int channels) :
-        loaded_(true), width_(width), height_(height), channels_(channels), image_gamma_(1.0) {
+        loaded_(true), width_(width), height_(height), channels_(channels), image_gamma_(
+                1.0) {
     // Used by VLCMovieProvider. Hard-coded to UCHAR format for now.
     load_mutex_ = new QMutex();
     format_ = OpenImageIO::TypeDesc::UCHAR;
-    pixel_data_ = (void *) malloc(
+    pixel_data_ = malloc(
             width_ * height_ * channels_ * sizeof(format_.elementsize()));
 }
 
@@ -77,7 +81,7 @@ OrkaImage::OrkaImage(const OrkaImage & other) {
     loaded_ = other.loaded_;
     image_gamma_ = other.image_gamma_;
     if (loaded_) {
-        pixel_data_ = (void *) malloc(
+        pixel_data_ = malloc(
                 width_ * height_ * channels_ * other.format_.elementsize());
         memcpy(pixel_data_, other.pixel_data_,
                 width_ * height_ * channels_ * other.format_.elementsize());
@@ -115,15 +119,15 @@ void OrkaImage::loadImage() {
     if (format_ == OpenImageIO::TypeDesc::HALF) {
         format_ = OpenImageIO::TypeDesc::FLOAT;
     }
-    color_space_ = spec.get_string_attribute("oiio:ColorSpace", "GammaCorrected");
+    color_space_ = spec.get_string_attribute("oiio:ColorSpace",
+            "GammaCorrected");
     if (color_space_ == "GammaCorrected") {
         image_gamma_ = spec.get_float_attribute("oiio:Gamma", 2.2);
     } else {
         image_gamma_ = 1.0;
     }
 
-    pixel_data_ = (void *) malloc(
-            width_ * height_ * channels_ * format_.elementsize());
+    pixel_data_ = malloc(width_ * height_ * channels_ * format_.elementsize());
     open_image_->read_image(format_, pixel_data_);
     open_image_->close();
     delete open_image_;
@@ -133,7 +137,6 @@ void OrkaImage::loadImage() {
 //    clock_t end = clock();
 //    std::cout << "read image in " << ((float) end - start) / CLOCKS_PER_SEC
 //            << " secs." << std::endl;
-
 }
 
 bool OrkaImage::isLoaded() {

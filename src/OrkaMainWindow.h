@@ -1,5 +1,5 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef SRC_ORKAMAINWINDOW_H_
+#define SRC_ORKAMAINWINDOW_H_
 
 #include <QMainWindow>
 
@@ -14,7 +14,7 @@ class OrkaMainWindow: public QMainWindow {
 Q_OBJECT
 
  public:
-    OrkaMainWindow(OrkaViewSettings * view_settings);
+    explicit OrkaMainWindow(OrkaViewSettings * view_settings);
     void set_image_provider(ImageProvider * provider);
  public slots:
      void toggleFullscreen();
@@ -27,4 +27,4 @@ Q_OBJECT
 
 } // end namespace orka
 
-#endif
+#endif  // SRC_ORKAMAINWINDOW_H_

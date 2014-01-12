@@ -7,6 +7,8 @@
 
 #include "VLCMovieProvider.h"
 
+#include <string>
+#include <utility>
 #include <functional>
 #include <algorithm>
 
@@ -15,41 +17,40 @@
 namespace orka {
 
 static void vlc_display(void *data, void *id) {
-    /* VLC wants to display the video */
-    VLCMovieProvider * provider = (VLCMovieProvider *) data;
+    // VLC wants to display the video
+    VLCMovieProvider * provider = reinterpret_cast<VLCMovieProvider *>(data);
     provider->display(id);
 }
 
-// VLC prepares to render a video frame.
 static void * vlc_lock(void *data, void **p_pixels) {
-    VLCMovieProvider * provider = (VLCMovieProvider *) data;
+    // VLC prepares to render a video frame.
+    VLCMovieProvider * provider = reinterpret_cast<VLCMovieProvider *>(data);
     provider->lock(p_pixels);
-    return NULL; // Picture identifier, not needed here.
+    return NULL;  // Picture identifier, not needed here.
 }
 
-// VLC just rendered a video frame.
 static void vlc_unlock(void *data, void *id, void * const *p_pixels) {
-    VLCMovieProvider * provider = (VLCMovieProvider *) data;
+    // VLC just rendered a video frame.
+    VLCMovieProvider * provider = reinterpret_cast<VLCMovieProvider *>(data);
     provider->unlock(id, p_pixels);
 }
 
-// typedef void( * libvlc_callback_t)(const struct libvlc_event_t *, void *)
 static void vlc_media_duration_changed(const struct libvlc_event_t * event, void * data) {
-    VLCMovieProvider * provider = (VLCMovieProvider *) data;
+    VLCMovieProvider * provider = reinterpret_cast<VLCMovieProvider *>(data);
     provider->setDuration(event->u.media_duration_changed.new_duration);
 }
 
 VLCMovieProvider::VLCMovieProvider(const std::string & filename) :
         ImageProvider(), filename_(filename) {
     char const *vlc_argv[] = {
-            "--no-xlib", // Don't use Xlib
-            "--no-skip-frames", //Disables framedropping on MPEG2 stream.
-            "--text-renderer", "dummy", // Text rendering module
-            "--vout", "dummy", // This is the the video output method used by VLC.
-            "--no-video-title-show", // Don't display the filename
-            "--no-stats", // Don't display stats
-            "--no-sub-autodetect-file", // Don't detect subtitles
-            "--no-disable-screensaver", //No need to disable the screensaver, and save a thread.
+            "--no-xlib",  // Don't use Xlib
+            "--no-skip-frames",  //Disables framedropping on MPEG2 stream.
+            "--text-renderer", "dummy",  // Text rendering module
+            "--vout", "dummy",  // This is the the video output method used by VLC.
+            "--no-video-title-show",  // Don't display the filename
+            "--no-stats",  // Don't display stats
+            "--no-sub-autodetect-file",  // Don't detect subtitles
+            "--no-disable-screensaver",  // No need to disable the screensaver, and save a thread.
             };
 
     int vlc_argc = sizeof(vlc_argv) / sizeof(*vlc_argv);
@@ -78,7 +79,7 @@ VLCMovieProvider::VLCMovieProvider(const std::string & filename) :
     fps_ = 24.0;
 
     // Allocate space for pixel data.
-    frameData_ = (vlc_int *) malloc(width_ * height_ * sizeof(vlc_int));
+    frameData_ = new vlc_int[width_ * height_];
     currentFrame_ = new OrkaImage(width_, height_, channels_);
 
     // Setup the video callbacks -
@@ -98,7 +99,7 @@ VLCMovieProvider::VLCMovieProvider(const std::string & filename) :
 VLCMovieProvider::~VLCMovieProvider() {
     libvlc_media_player_release(vlc_media_player_);
     libvlc_release(vlc_instance_);
-    free(frameData_);
+    delete [] frameData_;
     delete currentFrame_;
 }
 
@@ -134,17 +135,15 @@ void VLCMovieProvider::gotoFrame(int frame) {
 
 void VLCMovieProvider::display(void *id) {
     for (uint i = 0; i < height_ * width_; i += 1) {
-        // TODO: Figure out a better way to support both LDR and HDR videos.
-        // the 95% usecase will prob be LDR though.
         vlc_int data = frameData_[i];
         int mask = (1 << 8) - 1;
         int b = (data >> 0) & mask;
         int g = (data >> 8) & mask;
         int r = (data >> 16) & mask;
-//		int a = (data >> 24) & mask; // No alpha support in videos right now.
-        ((uchar*) currentFrame_->pixel_data_)[i * channels_ + 0] = r;
-        ((uchar*) currentFrame_->pixel_data_)[i * channels_ + 1] = g;
-        ((uchar*) currentFrame_->pixel_data_)[i * channels_ + 2] = b;
+//        int a = (data >> 24) & mask;  // No alpha support in videos right now.
+        reinterpret_cast<uchar*>(currentFrame_->pixel_data_)[i * channels_ + 0] = r;
+        reinterpret_cast<uchar*>(currentFrame_->pixel_data_)[i * channels_ + 1] = g;
+        reinterpret_cast<uchar*>(currentFrame_->pixel_data_)[i * channels_ + 2] = b;
     }
     libvlc_time_t current_time_ms = libvlc_media_player_get_time(
             vlc_media_player_);

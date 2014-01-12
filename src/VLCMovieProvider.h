@@ -5,14 +5,15 @@
  *      Author: vilhelm
  */
 
-#ifndef VLCMOVIEPROVIDER_H_
-#define VLCMOVIEPROVIDER_H_
+#ifndef SRC_VLCMOVIEPROVIDER_H_
+#define SRC_VLCMOVIEPROVIDER_H_
+
+#include <vlc/vlc.h>
 
 #include <string>
 #include <vector>
 #include <deque>
-
-#include <vlc/vlc.h>
+#include <utility>
 
 #include "ImageProvider.h"
 
@@ -22,8 +23,9 @@ typedef uint32_t vlc_int;
 
 class VLCMovieProvider: public ImageProvider {
 Q_OBJECT
-public:
-    VLCMovieProvider(const std::string & filename);
+
+ public:
+    explicit VLCMovieProvider(const std::string & filename);
     virtual ~VLCMovieProvider();
     virtual std::pair<int, int> getFramerange();
     virtual std::string getColorSpace() {
@@ -33,14 +35,15 @@ public:
     void lock(void ** p_pixels);
     void unlock(void *id, void * const *p_pixels);
     void setDuration(int new_duration);
-private slots:
+
+ private slots:
     void start();
     void stop();
     void toggleStartStop();
     void jog(int dframes);
     void gotoFrame(int frame);
 
-private:
+ private:
     vlc_int * frameData_;
     OrkaImage * currentFrame_;
 
@@ -57,4 +60,4 @@ private:
 };
 
 } /* namespace orka */
-#endif /* VLCMOVIEPROVIDER_H_ */
+#endif  // SRC_VLCMOVIEPROVIDER_H_

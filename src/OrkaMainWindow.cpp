@@ -1,5 +1,4 @@
 #include "OrkaMainWindow.h"
-#include "GLImageDisplayWidget.h"
 
 #include <QApplication>
 #include <QMenuBar>
@@ -9,6 +8,7 @@
 #include <QLabel>
 #include <QTimer>
 
+#include "GLImageDisplayWidget.h"
 #include "OrkaViewSettings.h"
 #include "ImageProvider.h"
 #include "ControlBar.h"
@@ -97,5 +97,5 @@ void OrkaMainWindow::toggleFullscreen() {
     }
 }
 
-} // end namespace orka
+}  // end namespace orka
 
