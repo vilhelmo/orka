@@ -59,6 +59,10 @@ void GLImageDisplayWidget::set_image_provider(ImageProvider * provider) {
 }
 
 void GLImageDisplayWidget::displayImage(OrkaImage * image, int frame, bool freeOldImageData) {
+    if (current_image_ == image) {
+        // If trying to load the same image again, no need to do anything.
+        return;
+    }
     if (freeOldImageData && current_image_) {
         current_image_->freePixels(); // Free memory from previous image.
     }

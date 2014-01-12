@@ -15,6 +15,8 @@
 
 #include <OpenImageIO/imageio.h>
 
+#include <QStyleFactory>
+
 #include <iostream>
 
 namespace orka {

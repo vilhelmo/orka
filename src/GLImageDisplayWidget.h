@@ -48,7 +48,6 @@ Q_OBJECT
     void mouseMoveEvent(QMouseEvent * event);
     void mouseReleaseEvent(QMouseEvent * event);
     void wheelEvent(QWheelEvent * event);
-
  private:
     void paintGL();
     void doPaint(const float * vertices, const float * texture_coords,

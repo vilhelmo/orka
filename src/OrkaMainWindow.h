@@ -16,6 +16,8 @@ Q_OBJECT
  public:
     OrkaMainWindow(OrkaViewSettings * view_settings);
     void set_image_provider(ImageProvider * provider);
+ public slots:
+     void toggleFullscreen();
 
  private:
     QWidget * central_widget_;
